@@ -1,4 +1,5 @@
-# 🌟 Welcome to [Note Keeper](https://note-keeper.space/)
+# Welcome to [Note Keeper](https://note-keeper.space/)
+[![Note Keeper Logo](https://github.com/Sany18/note-keeper/raw/main/assets/logo.png)](https://note-keeper.space/)
 
 > _Your private note and document manager powered by **Google Drive**._
 
