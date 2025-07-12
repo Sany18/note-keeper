@@ -1,0 +1,193 @@
+.MyDevices {
+  width: 100%;
+}
+
+.MyDevices__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.MyDevices__title {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.MyDevices__status {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.MyDevices__indicators {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.MyDevices__indicator {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+}
+
+.MyDevices__indicator--connected {
+  color: var(--success-color, #22c55e);
+}
+
+.MyDevices__indicator--disconnected {
+  color: var(--error-color, #ef4444);
+}
+
+.MyDevices__expandedContent {
+  padding: 12px 16px;
+  background: var(--bg-secondary, #f8f9fa);
+  border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.MyDevices__error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--error-color, #ef4444);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.MyDevices__loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.MyDevices__deviceHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.MyDevices__device {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-primary, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.MyDevices__device:hover {
+  background: var(--bg-hover, #f3f4f6);
+}
+
+.MyDevices__device--current {
+  border-color: var(--primary-color, #3b82f6);
+  background: var(--bg-primary, #ffffff);
+}
+
+.MyDevices__deviceIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--bg-secondary, #f8f9fa);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 20px;
+}
+
+.MyDevices__device--current .MyDevices__deviceIcon {
+  background: var(--primary-color, #3b82f6);
+  color: white;
+}
+
+.MyDevices__deviceInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.MyDevices__deviceName {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.MyDevices__deviceDetails {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.MyDevices__deviceStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.MyDevices__statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+}
+
+.MyDevices__statusDot--online {
+  background: var(--success-color, #22c55e);
+}
+
+.MyDevices__statusDot--offline {
+  background: var(--error-color, #ef4444);
+}
+
+.MyDevices__currentDevice {
+  margin-bottom: 16px;
+}
+
+.MyDevices__otherDevices {
+  margin-bottom: 16px;
+}
+
+.MyDevices__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.MyDevices__refreshButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--primary-color, #3b82f6);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.MyDevices__refreshButton:hover {
+  background: var(--primary-color-hover, #2563eb);
+}
+
+.ListItem__content {
+  cursor: pointer;
+}

@@ -1,0 +1,1 @@
+export const localSaveDebounceTime = 1000;

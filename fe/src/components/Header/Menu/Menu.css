@@ -1,0 +1,21 @@
+.Menu__toggle {
+  position: relative;
+
+  .HeaderMenu {
+    top: 50%;
+    right: 50%;
+
+    .item,
+    a {
+      gap: 0.75rem;
+      display: flex;
+    }
+  }
+
+  .Menu__version {
+    color: var(--comment-color) !important;
+    cursor: no-drop;
+    display: flex;
+    padding: 0.5rem 1rem;
+  }
+}

@@ -1,0 +1,7 @@
+// Google Material Icons
+.material-symbols-outlined {
+  &.inline {
+    display: inline;
+    font-size: inherit;
+  }
+}

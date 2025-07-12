@@ -1,0 +1,40 @@
+.DropFileUpload__wrapper {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  display: flex;
+  z-index: 1;
+  position: relative;
+  position: absolute;
+  background: rgba(0, 0, 0, 0.5);
+  align-items: center;
+  backdrop-filter: blur(0.5rem);
+  justify-content: center;
+}
+
+.DropFileUpload {
+  width: 80%;
+  color: var(--white-color);
+  height: 80%;
+  display: flex;
+  position: relative;
+  font-size: 1.5rem;
+  background: var(--purple-color-black);
+  align-items: center;
+  border-radius: 0.25rem;
+  justify-content: center;
+}
+
+.DropFileUpload__text {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.DropFileUpload__close {
+  top: 0.5rem;
+  right: 0.5rem;
+  cursor: pointer;
+  position: absolute;
+}

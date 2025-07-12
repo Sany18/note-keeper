@@ -1,0 +1,36 @@
+.ImageViewer {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+}
+
+.ImageViewer__scrollableArea {
+  flex: 1;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.ImageViewer__scaleButtons {
+  gap: 0.5rem;
+  right: 50%;
+  bottom: 0.25rem;
+  display: flex;
+  transform: translateX(50%);
+  position: absolute;
+  flex-direction: row;
+}
+
+.ImageViewer__image {
+  display: block;
+  opacity: 1;
+  min-height: 100%;
+  user-select: none;
+  transition: opacity 0.1s ease-in;
+
+  &.inProgress {
+    scale: 0.1;
+    opacity: 0;
+  }
+}

@@ -1,0 +1,1 @@
+Have to be removed each app reload (keep all info only in app state).

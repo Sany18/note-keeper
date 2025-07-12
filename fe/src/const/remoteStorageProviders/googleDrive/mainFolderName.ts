@@ -1,0 +1,1 @@
+export const mainFolderName = 'Google Drive';

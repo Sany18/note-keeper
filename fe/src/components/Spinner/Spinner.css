@@ -1,0 +1,24 @@
+.Spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .rotor {
+    width: 100%;
+    border: 2px solid var(--white-color);
+    display: inline-flex;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border-bottom: 2px solid transparent;
+    animation: spin 1s infinite linear;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,134 @@
+.Header {
+  color: var(--black-white);
+  height: 2.5rem;
+  display: flex;
+  background: var(--bg-color);
+  align-items: stretch;
+  user-select: none;
+  justify-content: space-between;
+
+  @media (max-width: 768px) {
+    height: 3rem;
+  }
+}
+
+.Header__leftPart {
+  gap: 0.5rem;
+  flex: 1;
+  display: flex;
+  align-items: center;
+
+  .Header__logo {
+    flex: 1;
+    height: 100%;
+    background: url('../../assets/logo/logo-192.webp') no-repeat;
+    background-position: left;
+
+    @media (max-width: 768px) {
+      background: url('../../assets/icons/icon-120.png') no-repeat center left;
+      background-size: 4.5rem;
+    }
+  }
+}
+
+.Header__icon-button {
+  color: var(--black-white);
+  height: 100%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  user-select: none;
+  aspect-ratio: 1;
+  justify-content: center;
+
+  &:hover {
+    background: var(--bg-color-light);
+  }
+}
+
+.Header__middlePart {
+}
+
+.Header__logoWrapper {
+  height: 100%;
+  display: flex;
+  overflow: hidden;
+  user-select: none;
+  align-items: center;
+
+  img {
+    height: 3.5rem;
+    margin: -19% 0 -13% 0;
+  }
+}
+
+.Header__rightPart {
+  gap: 0.25rem;
+  display: flex;
+  align-items: center;
+
+  .Header__googleSignIn > div:first-child {
+    overflow: hidden;
+  }
+
+  .Header__userIcon {
+    height: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+
+    img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--white-color);
+    }
+  }
+
+  .Header__loginButton {
+    margin-right: 0.5rem;
+  }
+}
+
+.Header__donateButton {
+  color: var(--orange-color-light);
+  transition: .3s;
+  display: flex;
+  padding: 0.5rem 1rem;
+  padding-bottom: 0.3rem;
+}
+
+.Header__textButton {
+  gap: 0.25rem;
+  color: var(--white-color);
+  display: flex;
+  transition: .3s;
+  align-items: center;
+
+  &:hover {
+    text-decoration: none;
+    text-shadow: 0 0 1rem var(--white-color);
+    transition: .3s;
+  }
+}
+
+.Header__dropdown {
+  top: 1.5rem;
+  right: 1.5rem;
+  min-width: 10rem;
+  position: absolute;
+}
+
+.BackLink {
+  gap: 0.5rem;
+  color: var(--white-color);
+  height: 100%;
+  display: flex;
+  padding: 0.5rem;
+  align-items: center;
+
+  &:hover {
+    background: var(--bg-color-light);
+    text-decoration: none;
+  }
+}

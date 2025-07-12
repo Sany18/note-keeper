@@ -1,0 +1,100 @@
+.LeftDrawer {
+  display: flex;
+  background: var(--bg-color);
+  flex-direction: column;
+  transition: 0.3s margin-left;
+}
+
+.LeftDrawer__title {
+  gap: 0.5rem;
+  top: 0;
+  color: var(--text-color);
+  margin: 0;
+  height: 2rem;
+  display: flex;
+  position: sticky;
+  font-size: 1rem;
+  background: var(--bg-color-light);
+  font-weight: bold;
+  align-items: center;
+  justify-content: space-between;
+
+  &.moveFileMode {
+    color: var(--black-color);
+    background: var(--green-color);
+
+    button {
+      color: var(--black-color);
+    }
+  }
+}
+
+.LeftDrawer__tree {
+  flex: 1;
+  display: flex;
+  padding: 0.25rem 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex-direction: column;
+  scrollbar-gutter: stable;
+}
+
+.LeftDrawer__resizeBar {
+  left: 0;
+  width: 3px;
+  bottom: 0;
+  cursor: ew-resize;
+  height: calc(100% - 2.5rem);
+  z-index: 1;
+  position: absolute;
+  transition: 0.3s left;
+  margin-left: -1px;
+}
+
+.LeftDrawer__titleLeft {
+  gap: 0.25rem;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  margin-left: 0.5rem;
+
+  .light-color {
+    color: var(--green-color-dark);
+  }
+
+  .elipsis {
+    color: var(--black-color);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+
+.LeftDrawer__titleRight {
+  display: flex;
+
+  .LeftDrawer__button {
+    border: none;
+    padding: 0.3rem;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 0;
+
+    &:hover {
+      background: var(--orange-color);
+    }
+  }
+}
+
+.LeftDrawer__bottom {
+  gap: 0.25rem 0.5rem;
+  display: flex;
+  padding: 0.25rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  margin-top: auto;
+
+  a {
+    color: var(--comment-color);
+  }
+}

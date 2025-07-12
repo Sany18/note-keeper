@@ -1,0 +1,137 @@
+button,
+.button {
+  color: var(--white-color);
+  border: unset;
+  cursor: pointer;
+  display: inline-flex;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--bg-color-light);
+  line-height: 1rem;
+  align-items: center;
+  font-family: Arial, Helvetica, sans-serif;
+  border-radius: 0.25rem;
+  letter-spacing: 0.02rem;
+  text-decoration: none;
+  justify-content: center;
+
+  &:hover {
+    color: var(--black-color);
+    background: var(--orange-color);
+    text-decoration: none;
+  }
+
+  &:active {
+    color: var(--white-color);
+    background: var(--bg-color-dark);
+  }
+
+  &:disabled {
+    color: var(--comment-color);
+    cursor: not-allowed;
+    background: none;
+    border-color: var(--green-color-dark);
+
+    &:active, &:hover {
+      background: none;
+    }
+  }
+}
+
+.button-icon {
+  padding: 0.25rem;
+}
+
+.button-flat {
+  color: var(--purple-color);
+  border: none;
+  padding: 0.25rem;
+  background: none;
+  border-radius: 0;
+}
+
+a {
+  color: var(--purple-color);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+iframe {
+  border: none;
+}
+
+input {
+  color: var(--white-color);
+  border: none;
+  padding: 0.5rem;
+  font-size: 1rem;
+  background: var(--second-bg-color);
+  border-radius: 0.25rem;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.buttonGroup {
+  z-index: 1;
+  display: flex;
+  border-radius: 0.25rem;
+  flex-direction: column;
+
+  .item {
+    gap: 0.25rem;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    box-shadow: 0.3rem 0.3rem 0.1rem rgba(0, 0, 0, 0.25);
+
+    &-icon {
+      padding: 0.4rem;
+    }
+
+    &:hover {
+      background-color: var(--orange-color);
+    }
+  }
+}
+
+.contextMenu {
+  z-index: 1;
+  display: flex;
+  overflow: hidden;
+  position: absolute;
+  background: var(--bg-color-light);
+  box-shadow: 0.3rem 0.3rem 0.1rem rgba(0, 0, 0, 0.25);
+  border-radius: 0.25rem;
+  flex-direction: column;
+
+  .item {
+    gap: 0.5rem;
+    color: var(--white-color);
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    display: flex;
+    min-width: max-content;
+    align-items: center;
+
+    &-icon {
+      padding: 0.4rem;
+    }
+
+    &:hover {
+      color: var(--black-color);
+      text-decoration: none;
+      background-color: var(--orange-color);
+    }
+  }
+}
+
+.hidden {
+  display: none;
+}

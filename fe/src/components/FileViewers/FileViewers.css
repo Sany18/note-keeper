@@ -1,0 +1,114 @@
+.FileViewer__container {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+}
+
+.FileViewer {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  flex-direction: column;
+  background: var(--bg-color-light);
+
+  pre {
+    margin: 0;
+    overflow: auto;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+  }
+
+  [contenteditable] {
+    outline: none;
+  }
+}
+
+.FileViewer__topBar {
+  width: 100%;
+  height: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.FileViewer__message {
+  gap: 0.5rem;
+  flex: 1;
+  padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
+
+  &.status {
+    color: var(--white-color);
+    background: var(--second-bg-color);
+  }
+
+  &.success {
+    color: var(--black-color);
+    background: var(--green-color-soft);
+  }
+
+  &.info {
+    color: var(--black-color);
+    background: var(--white-color);
+  }
+
+  &.warning {
+    color: var(--black-color);
+    background: var(--orange-color-light);
+  }
+}
+
+.FileViewer__bottomBar {
+  gap: 0.5rem;
+  color: var(--white-color);
+  display: flex;
+  padding: 0.25rem 0.5rem;
+  flex-wrap: wrap;
+  margin-top: auto;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--second-bg-color);
+
+  .FileViewer__bottomBar__left {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .FileViewer__bottomBar__right {
+    gap: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    display: flex;
+  }
+
+  .button {
+    gap: 0.5rem;
+    display: flex;
+  }
+}
+
+.FileViewer__fileIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.FileViewer__buttonCreateNote {
+  right: 1rem;
+  bottom: 1rem;
+  padding: 0.2rem;
+  position: absolute;
+}
+
+.FileViewer__closeFileButton {
+  right: 0;
+  margin: -0.5rem 0;
+}
+
+.FileViewer__googleDriveIcon {
+  color: var(--white-color);
+  width: 1rem;
+  height: 1rem;
+}

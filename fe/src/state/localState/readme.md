@@ -1,0 +1,1 @@
+Have to keep local app state in memory (using local storage).

@@ -1,0 +1,37 @@
+:root {
+  --white-color: #d6d6d6;
+  --yellow-color: #e5b567;
+  --yellow-color-dark: #c59e5d;
+  --green-color: #a9cc5d;
+  --green-color-soft: #afce87;
+  --green-color-dark: #55693b;
+  --orange-color-light: #e8a87c;
+  --orange-color: #e87d3e;
+  --orange-color-dark: #c95a2b;
+  --orange-color-black: #7d3e1e;
+  --orange-color-shadow: #5e2f15;
+  --purple-color-light: #b3a1e6;
+  --purple-color: #9e86c8;
+  --purple-color-dark: #48356b;
+  --purple-color-black: #38234b;
+  --pink-color: #b05279;
+  --blue-color: #6c99bb;
+  --blue-color-light: #c2c5eb;
+  --black-color: #000000;
+
+  --bg-color-bright: #383737;
+  --bg-color-light: #2b2b2b;
+  --bg-color: #202020;
+  --bg-color-dark: #141414;
+
+  --second-bg-color-light: #1c1c22;
+  --second-bg-color: #18181b;
+
+  --comment-color: #797979;
+
+  --scrollbar-width: 0.5rem;
+
+  /* Breakpoints */
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+}

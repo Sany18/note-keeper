@@ -1,0 +1,68 @@
+.ListItem {
+  user-select: none;
+
+  &:hover:not(:has(.ListItem:hover)) {
+    background: var(--second-bg-color-light);
+  }
+}
+
+.ListItem__content {
+  gap: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  padding: 0.1rem 0.25rem;
+  align-items: center;
+
+  &:hover {
+    background-color: var(--bg-color-light);
+  }
+
+  /* &.folderOpen {
+    background-color: var(--bg-color);
+  } */
+
+  &.dragover {
+    background-color: var(--orange-color-shadow);
+  }
+
+  &.activeFile {
+    background-color: var(--bg-color-bright);
+  }
+
+  .ListItem__leftPart {
+    gap: 0.25rem;
+    flex: 1;
+    display: flex;
+
+    .ListItem__expand {
+      width: 1rem;
+      min-width: 1rem;
+      transition: transform 0.2s;
+
+      &.open {
+        transform: rotate(90deg);
+        transition: transform 0.2s;
+      }
+    }
+
+    .ListItem__icon {
+      height: 1rem;
+      overflow: hidden;
+      min-width: 1rem;
+    }
+  }
+
+  .ListItem__expand {
+    width: 1rem;
+    height: 1rem;
+    min-width: 1rem;
+  }
+}
+
+.ListItem__children {
+  padding-left: 1rem;
+}
+
+.ListItem__name {
+  word-break: break-all;
+}
