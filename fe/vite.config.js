@@ -8,14 +8,16 @@ import path from 'path';
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, path.resolve(process.cwd(), '../'), '');
+  const basePath = process.env.VITE_BASE_PATH || env.VITE_BASE_PATH || '/';
 
   return {
-    base: process.env.VITE_BASE_PATH || '/',
+    base: basePath,
     plugins: [
       react(),
       tsconfigPaths(),
       VitePWA({
-        injectRegister: 'auto'
+        injectRegister: 'auto',
+        base: basePath,
       }),
       ViteImageOptimizer({
         png: {
