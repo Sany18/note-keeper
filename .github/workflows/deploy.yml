@@ -37,7 +37,13 @@ jobs:
       - name: Build
         working-directory: ./fe
         env:
-          VITE_BASE_PATH: /note-keeper/
+          VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH }}
+          VITE_GOOGLE_WEB_API_KEY: ${{ secrets.VITE_GOOGLE_WEB_API_KEY }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_GOOGLE_CLIENT_SECRET: ${{ secrets.VITE_GOOGLE_CLIENT_SECRET }}
+          VITE_GOOGLE_AUTH_DOMAIN: ${{ secrets.VITE_GOOGLE_AUTH_DOMAIN }}
+          VITE_GOOGLE_AUTHORIZED_REDIRECT_URI: ${{ secrets.VITE_GOOGLE_AUTHORIZED_REDIRECT_URI }}
+          GOOGLE_APP_ID: ${{ secrets.GOOGLE_APP_ID }}
         run: npm run build
 
       - name: Setup Pages

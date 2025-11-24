@@ -22,8 +22,8 @@ export const openPickerForFile = async (fileName?: string): Promise<GDPickerFile
       .addView(views)
       .enableFeature(window.google.picker.Feature.NAV_HIDDEN)
       .setOAuthToken(window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token)
-      .setDeveloperKey(process.env.VITE_GOOGLE_WEB_API_KEY)
-      .setAppId(process.env.VITE_GOOGLE_CLIENT_ID)
+      .setDeveloperKey(import.meta.env.VITE_GOOGLE_WEB_API_KEY)
+      .setAppId(import.meta.env.VITE_GOOGLE_CLIENT_ID)
       .setCallback(callback)
       .build()
       .setVisible(true);

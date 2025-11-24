@@ -1,6 +1,6 @@
 const registerWorker = (url) => {
   const params = {
-    version: process.env.VITE_VERSION
+    version: import.meta.env.VITE_VERSION
   };
 
   const urlParams = Object.keys(params)

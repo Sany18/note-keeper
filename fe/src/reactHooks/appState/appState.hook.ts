@@ -129,7 +129,7 @@ export const useAppState = () => {
 
   const _appWasUpdated = () => {
     const currentVersion = getItem(LocalStorageKeys.APP_VERSION);
-    const newVersion = process.env.VITE_VERSION;
+    const newVersion = import.meta.env.VITE_VERSION;
 
     if (currentVersion !== newVersion) {
       log.appEvent('App version changed', { currentVersion, newVersion });

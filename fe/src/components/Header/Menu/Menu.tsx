@@ -16,7 +16,7 @@ export const Menu: React.FC<Props> = ({ }) => {
   const { menuOpen, toggleMenu } = useContextMenu(menuEl);
 
   const renderVersion = () => {
-    const version = process.env.VITE_VERSION;
+    const version = import.meta.env.VITE_VERSION;
     return version ? `version ${version}` : '';
   }
 

@@ -57,7 +57,7 @@ const _useGoogleAuth = () => {
       googleSignInRef.current = window.google.accounts.oauth2.initTokenClient({
         scope: minimalGDscopes.join(' '),
         callback: initTokenCallback,
-        client_id: process.env.VITE_GOOGLE_CLIENT_ID,
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
         include_granted_scopes: true,
         enable_granular_consent: true,
       });

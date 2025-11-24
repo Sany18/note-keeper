@@ -58,8 +58,8 @@ export const _useGapi = () => {
         try {
           // Here is nothing to return
           await window.gapi.client.init({
-            apiKey: process.env.VITE_GOOGLE_WEB_API_KEY,
-            clientId: process.env.VITE_GOOGLE_CLIENT_ID,
+            apiKey: import.meta.env.VITE_GOOGLE_WEB_API_KEY,
+            clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
             discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
             scope: AllGDscopes.join(' '),
             pluginName: 'gapi.auth2',
