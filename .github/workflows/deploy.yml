@@ -36,6 +36,8 @@ jobs:
 
       - name: Build
         working-directory: ./fe
+        env:
+          VITE_BASE_PATH: /note-keeper/
         run: npm run build
 
       - name: Setup Pages
