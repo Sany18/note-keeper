@@ -10,9 +10,6 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, path.resolve(process.cwd(), '../'), '');
   const basePath = process.env.VITE_BASE_PATH || env.VITE_BASE_PATH || '/';
 
-  console.log(envs);
-  console.log(secrets);
-
   return {
     base: basePath,
     plugins: [
