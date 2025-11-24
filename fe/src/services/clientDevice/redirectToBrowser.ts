@@ -3,6 +3,6 @@ export const redirectToBrowserIfPlatformIsNotSupported = () => {
   const inAppBrowsers = ['instagram', 'fbav', 'linkedinapp', 'twitter', 'pinterest'];
 
   if (inAppBrowsers.some(app => userAgent.includes(app))) {
-    window.location.href = 'https://note-keeper.space';
+    window.location.href = 'https://sany18.github.io/note-keeper/';
   }
 }

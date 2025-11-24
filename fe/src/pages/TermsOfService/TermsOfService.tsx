@@ -7,7 +7,6 @@ import './TermsOfService.css';
 export const TermsOfService: React.FC = () => {
   const appName = <b>Note Keeper</b>
   const effectiveDate = <span>{new Date('2024-11-15').toLocaleDateString()}</span>;
-  // const mainLink = <a href="https://note-keeper.space/" target="_blank" rel="noreferrer">note-keeper.space</a>;
   const myEmail = <a href="mailto:parubok.sashko@gmil.com">Alex Tans</a>
 
   return (

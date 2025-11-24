@@ -5,7 +5,7 @@ import './Privacy.css';
 export const Privacy: React.FC = () => {
   const appName = <b>Note Keeper</b>
   const effectiveDate = <span>{new Date('2024-11-29').toLocaleDateString()}</span>;
-  const mainLink = <a href="https://note-keeper.space/" target="_blank" rel="noreferrer">note-keeper.space</a>;
+  const mainLink = <a href="https://sany18.github.io/note-keeper/" target="_blank" rel="noreferrer">note-keeper</a>;
   const myEmail = <a href="mailto:parubok.sashko@gmil.com">Alex Tans</a>
 
   return (
