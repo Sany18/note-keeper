@@ -1,0 +1,2 @@
+- remove getFile. Use fileInfo.webViewLink instead of file
+- create getFileFromUrl

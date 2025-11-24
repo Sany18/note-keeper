@@ -10,6 +10,7 @@ export default defineConfig(() => {
   const env = loadEnv(null, path.resolve(process.cwd(), '../'), '');
 
   return {
+    base: process.env.GITHUB_ACTIONS ? '/note-keeper/' : '/',
     plugins: [
       react(),
       tsconfigPaths(),
