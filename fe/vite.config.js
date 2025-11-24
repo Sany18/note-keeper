@@ -6,8 +6,8 @@ import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 import path from 'path';
 
 // https://vite.dev/config/
-export default defineConfig(() => {
-  const env = loadEnv(null, path.resolve(process.cwd(), '../'), '');
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, path.resolve(process.cwd(), '../'), '');
 
   return {
     base: process.env.VITE_BASE_PATH || '/',
@@ -29,7 +29,7 @@ export default defineConfig(() => {
     root: 'src',
     publicDir: '../public',
     server: {
-      port: env.PORT,
+      port: env.PORT || 3000,
       host: true,
     },
     define: {
