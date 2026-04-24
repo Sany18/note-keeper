@@ -17,6 +17,7 @@ import './ImageViewer.css';
 import { keyCodes } from "services/keyboardEvents/keyCodes.const";
 
 type Props = {};
+type ZoomAnchor = { x: number; y: number };
 
 const minScale = 0.2;
 const maxScale = 10;
@@ -46,10 +47,10 @@ const ImageViewer: React.FC<Props> = () => {
 
   const [leftMousePressed, setLeftMousePressed] = useState<boolean>(null);
   const [currentScaleFactor, setCurrentScaleFactor] = useState<number>(1);
-  const [lastScrollPosition, setlastScrollPosition] = useState({ x: 0.5, y: 0.5 }); // 0...1 is percentages in scrollable container area
 
   const imageRef = useRef(null);
   const scrollableViewRef = useRef(null);
+  const currentScaleFactorRef = useRef<number>(1);
 
   const getScrollableElement = () => {
     return scrollableViewRef.current;
@@ -59,13 +60,23 @@ const ImageViewer: React.FC<Props> = () => {
     return imageRef.current;
   }
 
-  const scaleImage = useCallback((newScale?: number) => {
+  const scaleImage = useCallback((newScale?: number, zoomAnchor?: ZoomAnchor) => {
     const image = getImageElement();
     const container = getScrollableElement();
+
+    if (!image || !container) return;
+
     const scrollablAreaStyle = getComputedStyle(container);
     const area = { x: parseInt(scrollablAreaStyle.width), y: parseInt(scrollablAreaStyle.height) };
+    const anchorX = Math.min(Math.max(zoomAnchor?.x ?? area.x * 0.5, 0), area.x);
+    const anchorY = Math.min(Math.max(zoomAnchor?.y ?? area.y * 0.5, 0), area.y);
+    const prevScrollWidth = container.scrollWidth;
+    const prevScrollHeight = container.scrollHeight;
+    const anchorContentX = container.scrollLeft + anchorX;
+    const anchorContentY = container.scrollTop + anchorY;
 
-    let nextScaleFactor = currentScaleFactor + currentScaleFactor * (newScale / 5);
+    const currentScale = currentScaleFactorRef.current;
+    let nextScaleFactor = currentScale + currentScale * (newScale / 5);
 
     // Limit scale factor
     if (nextScaleFactor < minScale) {
@@ -85,15 +96,18 @@ const ImageViewer: React.FC<Props> = () => {
 
       setImageSize(newWidth, newHeight);
 
-      const maxScrollLeft = container.scrollWidth - area.x;
-      const maxScrollTop = container.scrollHeight - area.y;
+      const widthRatio = prevScrollWidth > 0 ? container.scrollWidth / prevScrollWidth : 1;
+      const heightRatio = prevScrollHeight > 0 ? container.scrollHeight / prevScrollHeight : 1;
+      const nextScrollLeft = anchorContentX * widthRatio - anchorX;
+      const nextScrollTop = anchorContentY * heightRatio - anchorY;
 
-      container.scrollTop = maxScrollTop * lastScrollPosition.y;
-      container.scrollLeft = maxScrollLeft * lastScrollPosition.x;
+      container.scrollLeft = Math.min(Math.max(nextScrollLeft, 0), Math.max(container.scrollWidth - area.x, 0));
+      container.scrollTop = Math.min(Math.max(nextScrollTop, 0), Math.max(container.scrollHeight - area.y, 0));
     }
 
+    currentScaleFactorRef.current = nextScaleFactor;
     setCurrentScaleFactor(nextScaleFactor);
-  }, [lastScrollPosition, currentScaleFactor, defaultScale]);
+  }, [defaultScale]);
 
   const onKeydown = useCallback((e: KeyboardEvent) => {
     if (e.code === keyCodes.ArrowLeft) {
@@ -153,15 +167,6 @@ const ImageViewer: React.FC<Props> = () => {
     }
   }
 
-  const saveLastScrollPosition = useDebouncedCallback(() => {
-    const container = getScrollableElement();
-    const scrollablAreaStyle = getComputedStyle(container);
-    const area = { x: parseInt(scrollablAreaStyle.width), y: parseInt(scrollablAreaStyle.height) };
-    const scrollTop = container.scrollTop / (container.scrollHeight - area.y);
-    const scrollLeft = container.scrollLeft / (container.scrollWidth - area.x);
-    setlastScrollPosition({ x: scrollLeft, y: scrollTop });
-  }, 25);
-
   const centerImageElement = () => {
     getImageElement().scrollIntoView({ block: 'center', inline: 'center' });
   }
@@ -211,16 +216,6 @@ const ImageViewer: React.FC<Props> = () => {
     getImageElement().style.height = `${height}px`;
     getImageElement().style.padding = `${maxHeight * 0.5}px ${maxWidth * 0.5}px`;
   }
-
-  useEffect(() => {
-    if (!getScrollableElement() || !saveLastScrollPosition) return;
-
-    getScrollableElement()?.addEventListener('scroll', saveLastScrollPosition);
-
-    return () => {
-      getScrollableElement()?.removeEventListener('scroll', saveLastScrollPosition);
-    }
-  }, [saveLastScrollPosition])
 
   ////////////////////////////////////
   // Update image only if user opens file from explorer
@@ -277,6 +272,8 @@ const ImageViewer: React.FC<Props> = () => {
   // Scale image on load and default scale was set
   useEffect(() => {
     if (defaultScale) {
+      currentScaleFactorRef.current = 1;
+      setCurrentScaleFactor(1);
       scaleImage(0);
     }
   }, [defaultScale]);
@@ -298,10 +295,40 @@ const ImageViewer: React.FC<Props> = () => {
   //////////////////////////
   useEffect(() => {
     const container = getScrollableElement();
+    let touchpadZoomVelocity = 0;
+
+    const isLikelyTouchpad = (event: WheelEvent) => {
+      const absDeltaY = Math.abs(event.deltaY);
+
+      return event.deltaMode === WheelEvent.DOM_DELTA_PIXEL
+        && (absDeltaY < 40 || !Number.isInteger(absDeltaY));
+    }
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      scaleImage((e.deltaY > 0 ? -1 : 1));
+
+      if (isLikelyTouchpad(e)) {
+        const touchpadZoomSensitivity = 0.04;
+        const touchpadInertiaFactor = 0.7;
+        const linearDelta = -e.deltaY * touchpadZoomSensitivity;
+
+        touchpadZoomVelocity = touchpadZoomVelocity * touchpadInertiaFactor
+          + linearDelta * (1 - touchpadInertiaFactor);
+
+        const bounds = container.getBoundingClientRect();
+        scaleImage(touchpadZoomVelocity, {
+          x: e.clientX - bounds.left,
+          y: e.clientY - bounds.top,
+        });
+
+        return;
+      }
+
+      const bounds = container.getBoundingClientRect();
+      scaleImage((e.deltaY > 0 ? -1 : 1), {
+        x: e.clientX - bounds.left,
+        y: e.clientY - bounds.top,
+      });
     }
 
     container.addEventListener('wheel', onWheel);

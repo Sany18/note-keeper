@@ -30,6 +30,7 @@ import "./FileViewers.css";
 const PDFViewer = lazy(() => import('./Viewers/PDFViewer/PDFViewer'));
 const TextEditor = lazy(() => import('./Viewers/TextEditor/TextEditor'));
 const ImageViewer = lazy(() => import('./Viewers/ImageViewer/ImageViewer'));
+const VideoViewer = lazy(() => import('./Viewers/VideoViewer/VideoViewer'));
 const PasswordEditor = lazy(() => import('./Viewers/PasswordEditor/PasswordEditor'));
 
 type Props = {};
@@ -258,6 +259,12 @@ export const FileViewer: React.FC<Props> = () => {
         return (
           <Suspense fallback={<Loader />}>
             <PDFViewer />
+          </Suspense>
+        )
+      case ViewerType.VIDEO:
+        return (
+          <Suspense fallback={<Loader />}>
+            <VideoViewer />
           </Suspense>
         )
       case ViewerType.PASSWORD:

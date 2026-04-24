@@ -18,8 +18,23 @@ export const getFileFromNameExt = (fileName: string) => {
 }
 
 export const getViewTypeFromFile = (file: File): ViewerType => {
-  const fileExt = getFileFromNameExt(file?.name);
+  const fileExt = getFileFromNameExt(file?.name)?.toLowerCase();
   const mimeType = file?.mimeType;
+  const videoExtensions = new Set([
+    "mp4",
+    "webm",
+    "mov",
+    "avi",
+    "mkv",
+    "mpeg",
+    "mpg",
+    "m4v",
+    "ogv",
+  ]);
+
+  if (fileExt && videoExtensions.has(fileExt)) {
+    return ViewerType.VIDEO;
+  }
 
   switch (fileExt) {
     case ExtensionEnum.TXT:
@@ -43,9 +58,19 @@ export const getViewTypeFromFile = (file: File): ViewerType => {
       return ViewerType.IMAGE;
     case MimeTypesEnum.Pdf:
       return ViewerType.PDF;
+    case MimeTypesEnum.Video:
+    case MimeTypesEnum.Webm:
+    case MimeTypesEnum.Ogg:
+    case MimeTypesEnum.Mpeg:
+    case MimeTypesEnum.Avi:
+      return ViewerType.VIDEO;
     case MimeTypesEnum.Spreadsheet:
       return ViewerType.GOOGLE_DRIVE_LINK;
     default:
+      if (mimeType?.startsWith("video/")) {
+        return ViewerType.VIDEO;
+      }
+
       return ViewerType.UNKNOWN;
   }
 }
