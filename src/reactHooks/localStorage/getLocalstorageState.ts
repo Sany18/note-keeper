@@ -7,7 +7,8 @@ export const getLocalstorageState = () => {
     const item = localStorage.getItem(key);
 
     if (key.includes(storagePrefix)) {
-      const parsedItem = item && JSON.parse(item);
+      let parsedItem: any;
+      try { parsedItem = item ? JSON.parse(item) : undefined; } catch { parsedItem = undefined; }
       const origKey = key.replace(storagePrefix, "");
 
       state[origKey] = parsedItem;
