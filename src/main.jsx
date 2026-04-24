@@ -23,7 +23,12 @@ root.render(
     ExplorerProvider,
     GoogleAuthProvider,
     GapiProvider,
-    RouterProvider, { router }
+    RouterProvider, {
+      router,
+      future: {
+        v7_startTransition: true,
+      },
+    }
   )
 );
 

@@ -1,7 +1,6 @@
 import { createSingletonProvider } from "services/reactProvider/singletonProvider";
 import { LocalStorageKeys, useLocalStorage } from "reactHooks/localStorage/localStorage.hook";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getUserInfo } from "services/userInfo/userInfo.service";
 
 import { log } from "services/log/log.service";
 
@@ -140,24 +139,6 @@ const _useGoogleAuth = () => {
     refreshAccessTokenSilently,
     setItem,
   ]);
-
-  useEffect(() => {
-    if (!currentUser.googleAccessTokenToGD?.access_token) return;
-    if (isTokenExpired(currentUser.googleAccessTokenToGD?.receivedAt)) return;
-
-    getUserInfo(currentUser.googleAccessTokenToGD.access_token)
-      .then((userInfo) => {
-        if (userInfo) {
-          const updatedUser = { ...currentUser };
-          updatedUser.userInfo = userInfo;
-          setItem(LocalStorageKeys.CURRENT_USER, updatedUser);
-          log.appEvent('GoogleAuth: User info retrieved and stored', userInfo);
-        }
-      })
-      .catch((error) => {
-        log.error('GoogleAuth: Failed to get user info:', error);
-      });
-  }, [currentUser.googleAccessTokenToGD?.access_token, setItem]);
 
   const requestAdditionalScopes = useCallback(() => {
     if (googleSignInRef.current) {
