@@ -26,11 +26,10 @@ const TextEditor: React.FC<Props> = () => {
   const onInputHandler = useCallback(() => {
     saveFileToGDDebounced(content());
 
-    const { isFileSavedToRemoteStorage, isFileSavedLocaly, isFileChangedLocaly } = activeFileInfo;
-    if (isFileSavedToRemoteStorage || isFileSavedLocaly || !isFileChangedLocaly) {
+    const { isFileSavedToRemoteStorage, isFileChangedLocaly } = activeFileInfo;
+    if (isFileSavedToRemoteStorage || !isFileChangedLocaly) {
       setActiveFileInfo({
         isFileSavedToRemoteStorage: false,
-        isFileSavedLocaly: false,
         isFileChangedLocaly: true,
       });
     }

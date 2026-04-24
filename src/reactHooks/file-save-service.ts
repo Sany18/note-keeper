@@ -1,5 +1,3 @@
-import { useCallback } from "react";
-
 import { log } from "services/log/log.service";
 
 import { useGapi } from "./gapi/useGapi.hook";
@@ -9,11 +7,22 @@ import { localSaveDebounceTime } from "const/localSaveDebounceTime";
 
 export const useFileSaveService = () => {
   const { updateGDFile } = useGapi();
-  const { activeFileInfo, setActiveFileInfo, setActiveFileContent } = useActiveFile();
+  const { activeFileInfo, activeFileContent, setActiveFileInfo, setActiveFileContent } = useActiveFile();
 
   const saveFileToGD = (content) => {
     if (!activeFileInfo.fileInfoFromRemoteStorage) {
       log.error("FileViewer: File not saved. fileInfoFromRemoteStorage is not defined.");
+      return;
+    }
+
+    const nextContent = content ?? '';
+    const currentContent = activeFileContent ?? '';
+
+    if (nextContent === currentContent) {
+      setActiveFileInfo({
+        isFileSavedToRemoteStorage: true,
+        isFileChangedLocaly: false,
+      });
       return;
     }
 
@@ -22,7 +31,6 @@ export const useFileSaveService = () => {
       setActiveFileInfo({
         contentUpdatedLocalyAt: new Date().toISOString(),
         isFileSavedToRemoteStorage: false,
-        isFileSavedLocaly: false,
         isFileChangedLocaly: true,
         isFileUpdatedFromRemoteStorage: false,
       });

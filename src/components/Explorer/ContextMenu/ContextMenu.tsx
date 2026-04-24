@@ -352,17 +352,34 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
   // Show context menu
   useEffect(() => {
     if (contextMenuRef.current && contextEvent) {
+      const edgePadding = 8;
       const e = contextEvent;
-      const elementHeight = contextMenuRef.current.clientHeight;
+      const contextMenuElement = contextMenuRef.current as HTMLDivElement;
+      const elementHeight = contextMenuElement.offsetHeight || 200;
+      const elementWidth = contextMenuElement.offsetWidth || 220;
 
-      contextMenuRef.current.focus();
-      contextMenuRef.current.style.left = `${e.clientX}px`;
+      let left = e.clientX;
+      let top = e.clientY;
 
-      if (e.clientY + elementHeight > window.innerHeight) {
-        contextMenuRef.current.style.top = `${e.clientY - elementHeight}px`;
-      } else {
-        contextMenuRef.current.style.top = `${e.clientY}px`;
+      if (left + elementWidth > window.innerWidth - edgePadding) {
+        left = window.innerWidth - elementWidth - edgePadding;
       }
+
+      if (left < edgePadding) {
+        left = edgePadding;
+      }
+
+      if (top + elementHeight > window.innerHeight - edgePadding) {
+        top = window.innerHeight - elementHeight - edgePadding;
+      }
+
+      if (top < edgePadding) {
+        top = edgePadding;
+      }
+
+      contextMenuElement.focus();
+      contextMenuElement.style.left = `${left}px`;
+      contextMenuElement.style.top = `${top}px`;
     }
   }, [contextEvent, fileFromList, contextMenuRef]);
 
@@ -370,10 +387,34 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
     event.stopPropagation();
 
     if (subMenuRef.current) {
+      const edgePadding = 8;
+      const triggerGap = 4;
       const triggerRect = event.currentTarget.getBoundingClientRect();
+      const submenuElement = subMenuRef.current as HTMLDivElement;
+      const submenuWidth = submenuElement.offsetWidth || 220;
+      const submenuHeight = submenuElement.offsetHeight || 140;
 
-      subMenuRef.current.style.left = `${triggerRect.right + 4}px`;
-      subMenuRef.current.style.top = `${triggerRect.top}px`;
+      let left = triggerRect.right + triggerGap;
+      let top = triggerRect.top;
+
+      if (left + submenuWidth > window.innerWidth - edgePadding) {
+        left = triggerRect.left - submenuWidth - triggerGap;
+      }
+
+      if (left < edgePadding) {
+        left = Math.max(edgePadding, window.innerWidth - submenuWidth - edgePadding);
+      }
+
+      if (top + submenuHeight > window.innerHeight - edgePadding) {
+        top = window.innerHeight - submenuHeight - edgePadding;
+      }
+
+      if (top < edgePadding) {
+        top = edgePadding;
+      }
+
+      submenuElement.style.left = `${left}px`;
+      submenuElement.style.top = `${top}px`;
     }
 
     toggleSubMenu(true);

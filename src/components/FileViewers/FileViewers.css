@@ -65,6 +65,7 @@
   gap: 0.5rem;
   color: var(--white-color);
   display: flex;
+  position: relative;
   padding: 0.25rem 0.5rem;
   flex-wrap: wrap;
   margin-top: auto;
@@ -87,6 +88,114 @@
   .button {
     gap: 0.5rem;
     display: flex;
+  }
+}
+
+.FileViewer__buttonHistory {
+  min-width: 5rem;
+}
+
+.FileViewer__historyPanel {
+  right: 0.5rem;
+  width: min(30rem, calc(100% - 1rem));
+  bottom: calc(100% + 0.5rem);
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.7rem;
+  z-index: 2;
+  position: absolute;
+  border-radius: 0.6rem;
+  flex-direction: column;
+  border: 1px solid var(--bg-color-bright);
+  background: var(--bg-color-light);
+  box-shadow: 0 0.5rem 1.2rem #00000055;
+}
+
+.FileViewer__historyHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  span {
+    color: var(--comment-color);
+    font-size: 0.85rem;
+  }
+}
+
+.FileViewer__historySelect {
+  width: 100%;
+}
+
+.FileViewer__historyDetails {
+  display: grid;
+  gap: 0.2rem;
+  color: var(--comment-color);
+  font-size: 0.85rem;
+}
+
+.FileViewer__historyActions {
+  gap: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .FileViewer__bottomBar {
+    gap: 0.35rem;
+    padding: 0.35rem;
+    align-items: flex-start;
+
+    .FileViewer__bottomBar__left {
+      width: 100%;
+      font-size: 0.8rem;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .FileViewer__bottomBar__right {
+      width: 100%;
+      gap: 0.35rem;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+
+      .button,
+      .FileViewer__buttonHistory,
+      .FileViewer__buttonSave {
+        width: 100%;
+        min-width: 0;
+        justify-content: center;
+      }
+    }
+  }
+
+  .FileViewer__historyPanel {
+    left: 0.35rem;
+    right: 0.35rem;
+    bottom: 0.35rem;
+    width: auto;
+    z-index: 20;
+    position: fixed;
+    max-height: 55vh;
+    overflow-y: auto;
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .FileViewer__historyHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .FileViewer__historyActions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+
+    button {
+      width: 100%;
+      min-height: 2.15rem;
+    }
   }
 }
 

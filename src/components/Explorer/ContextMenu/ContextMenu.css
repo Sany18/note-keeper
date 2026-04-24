@@ -1,5 +1,7 @@
 .ContextMenu {
   position: absolute;
+  max-height: calc(100vh - 1rem);
+  overflow-y: auto;
 }
 
 .ContextMenu__item {

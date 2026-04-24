@@ -31,6 +31,8 @@ import { copyFile } from "./googleDriveCRUD/copyFile";
 import { useGapiErrorHandler } from "./gapi-error-handler.hook";
 import { getAllFromRootParams, getChildrenParams } from "const/remoteStorageProviders/googleDrive/gapi.parameters";
 import googleDriveSvg from "assets/icons/google-drive.svg";
+import { getGDRevisions } from "./googleDriveCRUD/getRevisions";
+import { getGDRevisionContent } from "./googleDriveCRUD/getRevisionContent";
 
 let gapiCallbacks = [];
 
@@ -144,6 +146,10 @@ export const _useGapi = () => {
   const copyGDFile = useCallback(copyFile({ handleError }), [handleError]);
 
   const createFile = useCallback(createGDFile({ handleError }), [handleError]);
+
+  const getGDRevisionsList = useCallback(getGDRevisions({ handleError }), [handleError]);
+
+  const getGDFileRevisionContent = useCallback(getGDRevisionContent({ handleError }), [handleError]);
 
   const uploadFileToGD = useCallback(uploadFiles({ handleError }), [handleError]);
 
@@ -279,6 +285,8 @@ export const _useGapi = () => {
     getFileInfo,
     renameGDFile,
     copyGDFile,
+    getGDRevisionsList,
+    getGDFileRevisionContent,
     updateGDFile,
     deleteGDFile,
     uploadFileToGD,

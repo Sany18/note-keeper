@@ -35,6 +35,16 @@ const PasswordEditor = lazy(() => import('./Viewers/PasswordEditor/PasswordEdito
 
 type Props = {};
 
+type GDRevision = {
+  id: string;
+  modifiedTime?: string;
+  keepForever?: boolean;
+  lastModifyingUser?: {
+    displayName?: string;
+    emailAddress?: string;
+  };
+};
+
 export const FileViewer: React.FC<Props> = () => {
   const [, setFilesState] = useRecoilState(explorerSelector);
   const { setExplorerInProgress, setTree } = useExplorer();
@@ -51,11 +61,24 @@ export const FileViewer: React.FC<Props> = () => {
 
   const { currentUser } = useGoogleAuth();
   const { loadFileFromRS } = useFileViewerService();
-  const { openPickerForFile, rootId, createFile } = useGapi();
+  const {
+    openPickerForFile,
+    rootId,
+    createFile,
+    updateGDFile,
+    getGDRevisionsList,
+    getGDFileRevisionContent,
+  } = useGapi();
 
   const [message, setMessage] = useState<EditorMessageType | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyRollingBack, setHistoryRollingBack] = useState(false);
+  const [fileRevisions, setFileRevisions] = useState<GDRevision[]>([]);
+  const [selectedRevisionId, setSelectedRevisionId] = useState<string>(null);
 
   const canSave = currentUser?.loggedIn && activeFileInfo.isFileChangedLocaly && !activeFileInfo?.isFileSavedToRemoteStorage;
+  const canUseRevisionHistory = activeFileInfo?.viewType === ViewerType.TEXT || activeFileInfo?.viewType === ViewerType.PASSWORD;
 
   const closeFile = () => {
     if (!activeFileInfo?.isFileSavedToRemoteStorage && !activeFileInfo?.isFileSavingToRemoteStorage) {
@@ -74,6 +97,102 @@ export const FileViewer: React.FC<Props> = () => {
       await loadFileFromRS(activeFileModel);
     } catch (error) {
       log.error('Error while getting access to file:', error);
+    }
+  }
+
+  const formatRevisionDate = (dateIso: string) => {
+    if (!dateIso) return 'Unknown date';
+
+    return new Date(dateIso).toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  }
+
+  const resetHistoryState = () => {
+    setHistoryOpen(false);
+    setHistoryLoading(false);
+    setHistoryRollingBack(false);
+    setFileRevisions([]);
+    setSelectedRevisionId(null);
+  }
+
+  const loadHistory = async () => {
+    if (!activeFileModel?.id) return;
+
+    setHistoryLoading(true);
+
+    try {
+      const revisions = await getGDRevisionsList({ fileId: activeFileModel.id });
+
+      setFileRevisions(revisions);
+      setSelectedRevisionId(revisions?.[0]?.id || null);
+    } catch (error) {
+      log.error('Error loading file revisions', error);
+      setFileRevisions([]);
+      setSelectedRevisionId(null);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  const toggleHistory = async () => {
+    if (!historyOpen) {
+      setHistoryOpen(true);
+      await loadHistory();
+      return;
+    }
+
+    setHistoryOpen(false);
+  }
+
+  const selectedRevision = fileRevisions.find(revision => revision.id === selectedRevisionId);
+
+  const loadSelectedRevisionToEditor = async () => {
+    if (!activeFileModel?.id || !selectedRevisionId) return;
+
+    setHistoryLoading(true);
+
+    try {
+      const revisionContent = await getGDFileRevisionContent({
+        fileId: activeFileModel.id,
+        revisionId: selectedRevisionId,
+      });
+
+      setActiveFileContent(revisionContent);
+      setActiveFileInfo({
+        changeFileInView: true,
+        isFileSavedToRemoteStorage: false,
+        isFileChangedLocaly: true,
+      });
+    } catch (error) {
+      log.error('Error loading selected revision content', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  const rollbackToSelectedRevision = async () => {
+    if (!activeFileModel?.id || !selectedRevisionId) return;
+
+    const confirmRollback = window.confirm('Restore this revision as the latest file version?');
+    if (!confirmRollback) return;
+
+    setHistoryRollingBack(true);
+
+    try {
+      const revisionContent = await getGDFileRevisionContent({
+        fileId: activeFileModel.id,
+        revisionId: selectedRevisionId,
+      });
+
+      await updateGDFile(activeFileModel, revisionContent);
+      await loadFileFromRS(activeFileModel);
+      await loadHistory();
+    } catch (error) {
+      log.error('Error rolling back file to selected revision', error);
+    } finally {
+      setHistoryRollingBack(false);
     }
   }
 
@@ -119,6 +238,10 @@ export const FileViewer: React.FC<Props> = () => {
     activeFileModel,
     activeFileInfo,
   ]);
+
+  useEffect(() => {
+    resetHistoryState();
+  }, [activeFileModel?.id]);
 
   const renderFileLink = () => {
     if (!activeFileModel) return null;
@@ -306,6 +429,16 @@ export const FileViewer: React.FC<Props> = () => {
           </div>
 
           <div className="FileViewer__bottomBar__right">
+            {canUseRevisionHistory &&
+              <button
+                title="Show file history"
+                onClick={toggleHistory}
+                disabled={historyRollingBack || activeFileInfo?.isFileSavingToRemoteStorage}
+                className="FileViewer__buttonHistory">
+                {historyLoading && historyOpen ? <Spinner size="0.9rem" /> : 'History'}
+              </button>
+            }
+
             <a
               href={activeFileModel.webViewLink}
               target="_blank"
@@ -329,6 +462,61 @@ export const FileViewer: React.FC<Props> = () => {
               </button>
             }
           </div>
+
+          {historyOpen &&
+            <div className="FileViewer__historyPanel">
+              <div className="FileViewer__historyHeader">
+                <b>Version History</b>
+                {!fileRevisions.length && !historyLoading && <span>No revision history found</span>}
+              </div>
+
+              {fileRevisions.length > 0 &&
+                <>
+                  <select
+                    className="FileViewer__historySelect"
+                    value={selectedRevisionId || ''}
+                    onChange={(e) => setSelectedRevisionId(e.target.value)}>
+                    {fileRevisions.map((revision) => {
+                      const userName = revision.lastModifyingUser?.displayName
+                        || revision.lastModifyingUser?.emailAddress
+                        || 'Unknown user';
+
+                      return (
+                        <option
+                          key={revision.id}
+                          value={revision.id}>
+                          {formatRevisionDate(revision.modifiedTime)} - {userName}{revision.keepForever ? ' (kept)' : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  <div className="FileViewer__historyDetails">
+                    <span>
+                      Selected: {formatRevisionDate(selectedRevision?.modifiedTime)}
+                    </span>
+                    <span>
+                      By: {selectedRevision?.lastModifyingUser?.displayName || selectedRevision?.lastModifyingUser?.emailAddress || 'Unknown user'}
+                    </span>
+                  </div>
+
+                  <div className="FileViewer__historyActions">
+                    <button
+                      onClick={loadSelectedRevisionToEditor}
+                      disabled={!selectedRevisionId || historyLoading || historyRollingBack}>
+                      Load version
+                    </button>
+                    <button
+                      onClick={rollbackToSelectedRevision}
+                      disabled={!selectedRevisionId || historyLoading || historyRollingBack}
+                      className="warn">
+                      {historyRollingBack ? <Spinner size="0.9rem" /> : 'Rollback'}
+                    </button>
+                  </div>
+                </>
+              }
+            </div>
+          }
         </div>
       }
     </div>

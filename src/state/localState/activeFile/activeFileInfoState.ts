@@ -10,7 +10,6 @@ export const defaultActiveFileInfoState = {
 
   changeFileInView: false,
 
-  isFileSavedLocaly: false,
   isFileChangedLocaly: false,
   isFileSavedToRemoteStorage: true,
   isFileSavingToRemoteStorage: false,
