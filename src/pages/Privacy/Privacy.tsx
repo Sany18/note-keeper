@@ -10,7 +10,7 @@ export const Privacy: React.FC = () => {
 
   return (
     <>
-      <Header simpleView />
+      <Header simpleView hideEditorName />
 
       <div className="Policy">
         <h2>

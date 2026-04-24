@@ -11,7 +11,7 @@ export const TermsOfService: React.FC = () => {
 
   return (
     <>
-      <Header simpleView />
+      <Header simpleView hideEditorName />
 
       <div className="TermsOfService">
         <h2>

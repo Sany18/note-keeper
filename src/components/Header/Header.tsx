@@ -16,9 +16,10 @@ import { editorNameByType } from "components/FileViewers/FileViewers.types";
 
 type Props = {
   simpleView?: boolean;
+  hideEditorName?: boolean;
 }
 
-export const Header: React.FC<Props> = ({ simpleView }) => {
+export const Header: React.FC<Props> = ({ simpleView, hideEditorName }) => {
   const [drawerState, setDraverState] = useRecoilState(leftDrawerSelector);
   const [activeFileInfo] = useRecoilState(activeFileInfoSelector);
 
@@ -56,7 +57,7 @@ export const Header: React.FC<Props> = ({ simpleView }) => {
         }
 
         <div className="Header__buttons">
-          {loggedIn && activeFileInfo?.viewType && editorNameByType[activeFileInfo.viewType]}
+          {!hideEditorName && loggedIn && activeFileInfo?.viewType && editorNameByType[activeFileInfo.viewType]}
         </div>
       </div>
 
