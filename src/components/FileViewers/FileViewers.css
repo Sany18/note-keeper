@@ -42,22 +42,22 @@
 
   &.status {
     color: var(--white-color);
-    background: var(--second-bg-color);
+    background: #15161a;
   }
 
   &.success {
-    color: var(--black-color);
-    background: var(--green-color-soft);
+    color: #10210e;
+    background: #a8cf7a;
   }
 
   &.info {
-    color: var(--black-color);
-    background: var(--white-color);
+    color: #0f1e29;
+    background: #c4d8e8;
   }
 
   &.warning {
-    color: var(--black-color);
-    background: var(--orange-color-light);
+    color: #2e1808;
+    background: #e8a56c;
   }
 }
 
