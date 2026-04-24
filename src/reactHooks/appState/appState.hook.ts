@@ -11,7 +11,6 @@ import { allStatesSelector } from "state/localState/allStates";
 import { activeFileInfoSelector } from "state/localState/activeFile/activeFileInfoState";
 import { useRecoilState, useSetRecoilState } from "recoil";
 
-import { File } from "dtos/file.model";
 import { activeFileContentSelector } from "state/localState/activeFile/activeFileContentState";
 
 const ignoreStateKeys = [
@@ -28,7 +27,7 @@ export const useAppState = () => {
   const [currentInfoFile, setCurrentInfoFile] = useRecoilState(activeFileInfoSelector);
   const [activeFileContentState, setActiveFileContentState] = useRecoilState(activeFileContentSelector);
 
-  const { executeAfterGapiInit, getFileInfo, getFile, rootId } = useGapi();
+  const { executeAfterGapiInit, getFile } = useGapi();
 
   const { setItem, getItem } = useLocalStorage();
 
@@ -92,8 +91,6 @@ export const useAppState = () => {
   const _loadFileFromRS = async (allStates) => {
     const { activeFileInfoState } = allStates;
     const fileInfoFromRemoteStorage = activeFileInfoState.fileInfoFromRemoteStorage
-
-    const savedAppState = getItem(LocalStorageKeys.ALL_STATES);
     let filecontentFromRemoteStorage: string;
 
     setCurrentInfoFile({
@@ -104,7 +101,7 @@ export const useAppState = () => {
     });
 
     try {
-      filecontentFromRemoteStorage = await getFile(savedAppState.activeFileInfoState.fileInfoFromRemoteStorage);
+      filecontentFromRemoteStorage = await getFile(fileInfoFromRemoteStorage);
     } catch (error) {
       setCurrentInfoFile({
         fileInfoFromRemoteStorage,
@@ -148,23 +145,7 @@ export const useAppState = () => {
     if (!activeFileInfoState?.fileInfoFromRemoteStorage) return _keepLocalFileVersion(null);
 
     executeAfterGapiInit(async () => {
-      let fileInfoFromRemoteStorage = await getFileInfo(activeFileInfoState.fileInfoFromRemoteStorage);
-
-      fileInfoFromRemoteStorage = new File({
-        ...fileInfoFromRemoteStorage,
-        root: fileInfoFromRemoteStorage.parents[0] === rootId
-      });
-
-      log.appEvent('Current file info from GD', fileInfoFromRemoteStorage);
-
-      const localFileLastUpdate = new Date(activeFileInfoState.contentUpdatedLocalyAt).getTime();
-      const gdFileLastUpdate = new Date(fileInfoFromRemoteStorage.modifiedTime).getTime();
-
-      if (gdFileLastUpdate > localFileLastUpdate) {
-        await _loadFileFromRS(allStates);
-      } else {
-        _keepLocalFileVersion(allStates);
-      }
+      await _loadFileFromRS(allStates);
     });
   }
 

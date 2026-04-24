@@ -117,16 +117,39 @@ export const FileViewer: React.FC<Props> = () => {
   ]);
 
   const renderFileLink = () => {
-    return activeFileModel?.webViewLink &&
-      <div className="FileViewer__message">
-        The file can be viewed only in Google Drive.
-        <a
-          href={activeFileModel?.webViewLink}
-          target="_blank"
-          className="button">
-          Open in Google Drive
-        </a>
+    if (!activeFileModel) return null;
+
+    return (
+      <div className="FileViewer__driveOnly">
+        <div className="FileViewer__driveOnlyCard">
+          <Img
+            src={googleDriveSvg}
+            alt="Google Drive"
+            className="FileViewer__driveOnlyIcon" />
+
+          <h3>Preview available in Google Drive</h3>
+
+          <p>
+            This file type is not supported by the built-in viewer.
+            Open it in Google Drive to see and edit the original file.
+          </p>
+
+          <div className="FileViewer__driveOnlyMeta">
+            <span>{activeFileModel.name}</span>
+            <span>{activeFileModel.mimeType || activeFileModel.extension || 'Unknown type'}</span>
+          </div>
+
+          {activeFileModel.webViewLink &&
+            <a
+              href={activeFileModel.webViewLink}
+              target="_blank"
+              className="button FileViewer__driveOnlyButton">
+              Open in Google Drive
+            </a>
+          }
+        </div>
       </div>
+    );
   }
 
   const renderHaveNoAccess = () => {

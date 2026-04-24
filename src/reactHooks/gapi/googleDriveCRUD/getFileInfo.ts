@@ -14,8 +14,13 @@ export const getGDFileInfo = ({ handleError }) => (fileInfo: File): Promise<any>
       log.appEvent('Downloaded file info from GD:', response);
       resolve(response.result);
     }).catch((error) => {
+      if (error?.status === 404) {
+        reject(error);
+        return;
+      }
+
       handleError('getCurrentFileInfo', error, fileInfo.name);
-      // reject(error);
+      reject(error);
     });
   });
 };

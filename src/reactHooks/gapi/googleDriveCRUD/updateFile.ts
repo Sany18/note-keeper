@@ -15,12 +15,17 @@ export const updateFile = ({
   });
 
   return new Promise(async (resolve, reject) => {
+    const contentType = fileInfo.mimeType || 'text/plain';
+
     const params = {
       path: `https://www.googleapis.com/upload/drive/v3/files/${fileInfo.id}`,
       method: 'PATCH',
       params: {
         uploadType: 'media',
         fields: fieldsArray.join(','),
+      },
+      headers: {
+        'Content-Type': `${contentType}; charset=UTF-8`,
       },
       body: content,
     };

@@ -3,8 +3,6 @@ import { useActiveFile } from "reactHooks/fileManager/activeFile/activeFile.hook
 import { useFileSaveService } from "reactHooks/file-save-service";
 import { useCallback, useEffect, useRef } from "react";
 
-import DOMPurify from 'dompurify';
-
 import { log } from "services/log/log.service";
 import { keyCodes } from "services/keyboardEvents/keyCodes.const";
 
@@ -81,15 +79,27 @@ const TextEditor: React.FC<Props> = () => {
 
   // Update only if user opens file from explorer
   useEffect(() => {
-    if (!activeFileInfo.isFileDownloadingFromRemoteStorage && activeFileInfo.changeFileInView) {
+    if (!activeFileInfo?.changeFileInView || activeFileInfo?.isFileDownloadingFromRemoteStorage) return;
+
+    const waitingForRemoteContent = activeFileInfo?.isFileUpdatedFromRemoteStorage && activeFileContent === null;
+
+    if (waitingForRemoteContent) return;
+
+    if (editorContentRef.current) {
       log.appEvent("FileViewer: File loaded. File name:", activeFileInfo.fileInfoFromRemoteStorage?.name);
 
-      const content = DOMPurify.sanitize(activeFileContent || "");
-      editorContentRef.current.value = content;
-
-      setActiveFileInfo({ changeFileInView: false });
+      editorContentRef.current.value = activeFileContent || "";
     }
-  }, [activeFileInfo.changeFileInView, setActiveFileInfo]);
+
+    setActiveFileInfo({ changeFileInView: false });
+  }, [
+    activeFileInfo?.changeFileInView,
+    activeFileInfo?.isFileDownloadingFromRemoteStorage,
+    activeFileInfo?.isFileUpdatedFromRemoteStorage,
+    activeFileInfo?.fileInfoFromRemoteStorage?.id,
+    activeFileContent,
+    setActiveFileInfo,
+  ]);
 
   useEffect(() => {
     const onSave = () => {
