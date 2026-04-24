@@ -37,13 +37,19 @@ export const WelcomePage: React.FC = () => {
 
       <h2>Plans</h2>
       <ul>
-        <li>Disable drag'n'drop on mobile devices</li>
         <li>Add Ukrainian language support</li>
         <li>Add configuration panel~page</li>
         <li>Add 5 recently opened files</li>
       </ul>
 
       <h2>What's new</h2>
+      <ul>
+        <li>24/04/2026</li>
+        <li>Added video playback support in the file viewer</li>
+        <li>Added a Copy action to the explorer context menu</li>
+        <li>Improved drag&apos;n&apos;drop, move flow, and disabled drag&apos;n&apos;drop on touch devices</li>
+      </ul>
+
       <ul>
         <li>28/02/2025</li>
         <li>Improved fonts loading</li>

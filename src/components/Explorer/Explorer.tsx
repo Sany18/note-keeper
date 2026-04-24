@@ -9,6 +9,7 @@ import { useRecoilState } from 'recoil';
 
 import { log } from 'services/log/log.service';
 import { isCtrl } from 'services/keyboardEvents/keyboardEvents.service';
+import { isTouchDevice } from 'services/clientDevice/getPlatform';
 import { getDOMParrentElement } from 'services/DOM/getParentElementByClassName';
 import { getClosestParentFolder } from 'services/tree/treeHelpers';
 
@@ -315,6 +316,10 @@ export const Explorer: React.FC<Props> = () => {
 
   // Move file on drag and drop
   useEffect(() => {
+    if (isTouchDevice) {
+      return;
+    }
+
     let movedFileId = '';
     let targetFolderId: string;
 

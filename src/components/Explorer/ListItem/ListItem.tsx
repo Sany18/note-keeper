@@ -58,7 +58,7 @@ export const ListItem: React.FC<Props> = ({ fileFromList, selectedFileIds = [], 
     <div
       className="ListItem"
       title={fileFromList.title || fileFromList.name}
-      draggable={!isTouchDevice || fileFromList.draggable}
+      draggable={!isTouchDevice && fileFromList.draggable !== false}
       data-fileid={fileFromList.id}>
       <div
         onClick={toggleItem}
