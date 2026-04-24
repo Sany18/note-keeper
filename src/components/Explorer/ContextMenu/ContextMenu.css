@@ -22,6 +22,7 @@
 
 .ContextMenu__submenu_createMore {
   position: absolute;
+  z-index: 2;
 }
 
 .hide {

@@ -30,18 +30,95 @@ import './Explorer.css';
 
 type Props = {};
 
+type WebkitFileEntry = {
+  isFile: true;
+  isDirectory: false;
+  file: (successCallback: (file: globalThis.File) => void, errorCallback?: (error: unknown) => void) => void;
+};
+
+type WebkitDirectoryEntry = {
+  isFile: false;
+  isDirectory: true;
+  createReader: () => {
+    readEntries: (
+      successCallback: (entries: WebkitEntry[]) => void,
+      errorCallback?: (error: unknown) => void
+    ) => void;
+  };
+};
+
+type WebkitEntry = WebkitFileEntry | WebkitDirectoryEntry;
+
+const readDirectoryEntries = (directoryEntry: WebkitDirectoryEntry): Promise<WebkitEntry[]> => {
+  const reader = directoryEntry.createReader();
+
+  return new Promise((resolve, reject) => {
+    const collectedEntries: WebkitEntry[] = [];
+
+    const readChunk = () => {
+      reader.readEntries((entries) => {
+        if (!entries.length) {
+          resolve(collectedEntries);
+          return;
+        }
+
+        collectedEntries.push(...entries);
+        readChunk();
+      }, reject);
+    };
+
+    readChunk();
+  });
+};
+
+const getFilesFromEntry = async (entry: WebkitEntry): Promise<globalThis.File[]> => {
+  if (entry.isFile) {
+    return new Promise((resolve, reject) => {
+      entry.file((file) => resolve([file]), reject);
+    });
+  }
+
+  if (entry.isDirectory) {
+    const entries = await readDirectoryEntries(entry);
+    const nestedFiles = await Promise.all(entries.map(getFilesFromEntry));
+
+    return nestedFiles.flat();
+  }
+
+  return [];
+};
+
+const getDroppedFiles = async (dataTransfer: DataTransfer): Promise<globalThis.File[]> => {
+  const dataTransferItems = Array.from(dataTransfer.items || []);
+  const webkitEntries = dataTransferItems
+    .map(item => (item as DataTransferItem & { webkitGetAsEntry?: () => WebkitEntry | null }).webkitGetAsEntry?.())
+    .filter(Boolean) as unknown as WebkitEntry[];
+
+  if (webkitEntries.length) {
+    const filesByEntry = await Promise.all(webkitEntries.map(getFilesFromEntry));
+
+    return filesByEntry.flat();
+  }
+
+  return Array.from(dataTransfer.files || []);
+};
+
+const isExternalFilesDrop = (e: DragEvent): boolean => {
+  return Array.from(e.dataTransfer?.types || []).includes('Files');
+};
+
 export const Explorer: React.FC<Props> = () => {
   const [appState] = useRecoilState(appSelector);
   const [sessionState] = useRecoilState(sessionSelector);
   const [, setFilesState] = useRecoilState(explorerSelector);
   const [drawerState, setDrawerState] = useRecoilState(leftDrawerSelector);
 
-  const { activeFileModel } = useActiveFile();
+  const { activeFileModel, setActiveFileModel, setActiveFileInfo } = useActiveFile();
   const { isExplorerInProgress, fileTree, rootFolderId, updateFileInTree, getFileFromTreeById } = useExplorer();
 
   const { renameGDFile, changeFileParent, fetchRootFilesList } = useGapi();
   const { requestAdditionalScopes, currentUser } = useGoogleAuth();
-  const { inProgress: fileUploadingInProgress, openUploadDialog } = useUploadFiles();
+  const { inProgress: fileUploadingInProgress, openUploadDialog, uploadFiles } = useUploadFiles();
 
   const [contextMenuEvent, setContextMenuEvent] = useState<any>(false);
 
@@ -72,9 +149,11 @@ export const Explorer: React.FC<Props> = () => {
 
     renameGDFile(activeFileModel, newName)
       .then(() => {
-        const updatedFile = { ...activeFileModel, name: newName };
+        const updatedFile = new File({ ...activeFileModel, name: newName });
 
         updateFileInTree(updatedFile);
+        setActiveFileModel(updatedFile);
+        setActiveFileInfo({ fileInfoFromRemoteStorage: updatedFile });
       })
       .catch(e => {
         log.error('Error renaming file', e);
@@ -82,7 +161,7 @@ export const Explorer: React.FC<Props> = () => {
       .finally(() => {
         setFilesState({ inProgress: false });
       });
-  }, [activeFileModel]);
+  }, [activeFileModel, setActiveFileModel, setActiveFileInfo]);
 
   const userHasDriveAccess = useCallback(() => {
     return currentUser.scopes?.includes('docs');
@@ -126,23 +205,63 @@ export const Explorer: React.FC<Props> = () => {
 
   // Move file on drag and drop
   useEffect(() => {
-    let movedFileId: string;
+    let movedFileId = '';
     let targetFolderId: string;
 
     const handleDragStart = (e: DragEvent) => {
       movedFileId = (e.target as HTMLElement).dataset.fileid;
     }
 
-    const handleDragOver = (e: DragEvent) => {}
+    const handleDragEnd = () => {
+      movedFileId = '';
+    }
 
-    const handleDrop = (e: DragEvent) => {
+    const handleDragOver = (e: DragEvent) => {
+      if (isExternalFilesDrop(e)) {
+        e.preventDefault();
+
+        if (e.dataTransfer) {
+          e.dataTransfer.dropEffect = 'copy';
+        }
+      }
+    }
+
+    const handleDrop = async (e: DragEvent) => {
+      if (isExternalFilesDrop(e)) {
+        e.preventDefault();
+      }
+
       targetFolderId = getListElement(e.target as HTMLElement)?.dataset.fileid;
 
-      // If drop on root folder
-      if (movedFileId && !targetFolderId) targetFolderId = rootFolderId;
+      // If drop on root area
+      if (!targetFolderId) targetFolderId = rootFolderId;
+
+      // Import external files/folders directly into hovered folder
+      if (!movedFileId) {
+        const transfer = e.dataTransfer;
+
+        if (!transfer || !targetFolderId) return;
+
+        const droppedFiles = await getDroppedFiles(transfer);
+
+        if (!droppedFiles.length) return;
+
+        let targetFolder = getFileFromTreeById(targetFolderId);
+
+        if (targetFolderId !== rootFolderId && targetFolder.mimeType !== MimeTypesEnum.Folder) {
+          const closestParentFolder = getClosestParentFolder(fileTree, targetFolder);
+
+          if (closestParentFolder?.id) {
+            targetFolderId = closestParentFolder.id;
+          }
+        }
+
+        uploadFiles(droppedFiles, targetFolderId);
+        return;
+      }
 
       // If drop outside of the list
-      if (!movedFileId || !targetFolderId) return;
+      if (!targetFolderId) return;
 
       const fileToMove = getFileFromTreeById(movedFileId);
       let targetFolder = getFileFromTreeById(targetFolderId);
@@ -179,15 +298,17 @@ export const Explorer: React.FC<Props> = () => {
     }
 
     document.addEventListener('dragstart', handleDragStart);
+    document.addEventListener('dragend', handleDragEnd);
     document.addEventListener('dragover', handleDragOver);
     document.addEventListener('drop', handleDrop);
 
     return () => {
       document.removeEventListener('dragstart', handleDragStart);
+      document.removeEventListener('dragend', handleDragEnd);
       document.removeEventListener('dragover', handleDragOver);
       document.removeEventListener('drop', handleDrop);
     }
-  }, [activeFileModel, rootFolderId, getFileFromTreeById]);
+  }, [activeFileModel, rootFolderId, getFileFromTreeById, uploadFiles, fileTree]);
 
   ////////////////////////////
   // Open/close drawer
@@ -287,90 +408,6 @@ export const Explorer: React.FC<Props> = () => {
       document.removeEventListener('mouseup', handleMouseUp);
     }
   }, [drawerState, setDrawerState]);
-
-  // Open/close/resize drawer on swipe (touch)
-  useEffect(() => {
-    const currentSidebarWidth = drawerState.width;
-    const nextDrawerState = { ...drawerState };
-    const defineDirectionTreshold = 10;
-
-    let newWidth: number;
-    let touchStart = { x: 0, y: 0 };
-    let allowResize = false;
-    let directionDefined: 'x' | 'y' | false = false;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-
-      if (!drawerState.open && touchStart.x < 20) {
-        allowResize = true;
-      } else if (touchStart.x < currentSidebarWidth + 10) {
-        allowResize = true;
-      } else {
-        allowResize = false;
-      }
-    }
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!allowResize || directionDefined === 'y') return;
-
-      const { clientX, clientY } = e.touches[0];
-
-      // To avoid scrolling and moving the drawer at the same time
-      if (!directionDefined
-          && (Math.abs(touchStart.y - clientY) > defineDirectionTreshold
-            || Math.abs(touchStart.x - clientX) > defineDirectionTreshold)) {
-        if (Math.abs(touchStart.y - clientY) > defineDirectionTreshold) {
-          allowResize = false;
-          directionDefined = 'y';
-          return;
-        } else {
-          directionDefined = 'x';
-        }
-      }
-
-      e.preventDefault();
-
-      const touchDelta = clientX - touchStart.x;
-      newWidth = currentSidebarWidth + touchDelta;
-
-      if (newWidth + minWidth > window.innerWidth) {
-        newWidth = window.innerWidth - minWidth;
-      }
-
-      setDrawerElementWidth(newWidth, true);
-
-      if (newWidth < minWidth) {
-        nextDrawerState.open = false;
-      }
-
-      if (newWidth > minWidth) {
-        nextDrawerState.open = true;
-      }
-    }
-
-    const handleTouchEnd = () => {
-      directionDefined = false;
-
-      if (!allowResize || !newWidth || newWidth === currentSidebarWidth) return;
-
-      if (newWidth < 1) {
-        newWidth = 1;
-      }
-
-      setDrawerState({ ...nextDrawerState, width: newWidth });
-    }
-
-    document.addEventListener('touchstart', handleTouchStart, false);
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    document.addEventListener('touchend', handleTouchEnd, false);
-
-    return () => {
-      document.removeEventListener('touchstart', handleTouchStart, false);
-      document.removeEventListener('touchmove', handleTouchMove, false);
-      document.removeEventListener('touchend', handleTouchEnd, false);
-    }
-  }, [drawerState]);
 
   const renderTitle = () => {
     return (

@@ -35,7 +35,7 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
   const [, setFilesState] = useRecoilState(explorerSelector);
   const [drawerState, setDrawerState] = useRecoilState(leftDrawerSelector);
 
-  const { activeFileInfo } = useActiveFile();
+  const { activeFileInfo, activeFileModel, setActiveFileModel, setActiveFileInfo } = useActiveFile();
   const { fileTree, setTree, updateFileInTree } = useExplorer();
 
   const { openUploadDialog } = useUploadFiles();
@@ -67,6 +67,7 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
   // Means only the new contextEvent call will show context menu
   useEffect(() => {
     toggleMenu(!!fileFromList);
+    toggleSubMenu(false);
   }, [contextEvent]);
 
   const renameSaveHandler = useCallback((newName: string) => {
@@ -74,9 +75,14 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
 
     renameGDFile(fileFromList, newName)
       .then(() => {
-        const updatedFile = { ...fileFromList, name: newName };
+        const updatedFile = new File({ ...fileFromList, name: newName });
 
         updateFileInTree(updatedFile);
+
+        if (activeFileModel?.id === updatedFile.id || activeFileInfo?.fileInfoFromRemoteStorage?.id === updatedFile.id) {
+          setActiveFileModel(updatedFile);
+          setActiveFileInfo({ fileInfoFromRemoteStorage: updatedFile });
+        }
       })
       .catch(e => {
         log.error('Error renaming file', e);
@@ -84,7 +90,7 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
       .finally(() => {
         setFilesState({ inProgress: false });
       });
-  }, [fileFromList, fileTree, updateFileInTree]);
+  }, [fileFromList, fileTree, updateFileInTree, activeFileModel, activeFileInfo, setActiveFileModel, setActiveFileInfo]);
 
   const renameClickHandler = useCallback(() => {
     toggleMenu(false);
@@ -149,7 +155,7 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
         .then(() => {
           setTree(removeElementFromTree(fileTree, fileFromList.id));
 
-          if (fileFromList.id === activeFileInfo?.fileInfoFromRemoteStorage?.id) {
+          if (fileFromList.id === activeFileInfo?.fileInfoFromRemoteStorage?.id || fileFromList.id === activeFileModel?.id) {
             resetCurrentFileInfo();
             resetCurrentFileContent();
             setFilesState({ activeFileModel: null });
@@ -162,7 +168,7 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
           setFilesState({ inProgress: false });
         });
     }, 0);
-  }, [fileTree, activeFileInfo, fileFromList, setFilesState]);
+  }, [fileTree, activeFileInfo, activeFileModel, fileFromList, setFilesState]);
 
   const onUploadFilesToFolder = useCallback(() => {
     toggleMenu(false);
@@ -175,11 +181,15 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
     openUploadDialog(fileFromList?.id || rootId);
   }, [rootId, closestParentFolder, fileTree, fileFromList, setFilesState]);
 
-  const createNewItem = useCallback((itemType, mimeType) => {
+  const createNewItem = useCallback((
+    itemType: 'file' | 'folder',
+    mimeType?: string,
+    itemTypeLabel = itemType === 'folder' ? 'folder' : 'file'
+  ) => {
     toggleMenu(false);
+    toggleSubMenu(false);
 
     setTimeout(() => {
-      const itemTypeLabel = itemType === 'folder' ? 'folder' : 'file';
       const parentFolderName = closestParentFolder ? closestParentFolder.name : mainFolderName;
       const itemName = window.prompt(`Create a ${itemTypeLabel} in "${parentFolderName}"\nEnter ${itemTypeLabel} name`);
 
@@ -189,11 +199,10 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
 
       const finalMimeType = itemType === 'folder'
         ? MimeTypesEnum.Folder
-        : getMimeFromExtension(fileFromList?.extension);
+        : mimeType || getMimeFromExtension(fileFromList?.extension || '') || MimeTypesEnum.Text;
 
-      const parentIds = closestParentFolder
-        ? [closestParentFolder.id]
-        : fileFromList?.parents || [rootId];
+      const targetParentId = closestParentFolder?.id || fileFromList?.parents?.[0] || rootId;
+      const parentIds = [targetParentId];
 
       createFile(itemName, finalMimeType, parentIds)
         .then((response) => {
@@ -211,11 +220,15 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
     }, 0);
   }, [closestParentFolder, fileFromList, fileTree, setFilesState]);
 
-  const createNewTextFile = useCallback(() => createNewItem('file', MimeTypesEnum.Text), [createNewItem]);
+  const createNewTextFile = useCallback(() => createNewItem('file', MimeTypesEnum.Text, 'note'), [createNewItem]);
 
   const createNewFolder = useCallback(() => createNewItem('folder', MimeTypesEnum.Folder), [createNewItem]);
 
-  const createGoogleDoc = useCallback(() => createNewItem('file', MimeTypesEnum.Document), [createNewItem]);
+  const createGoogleDoc = useCallback(() => createNewItem('file', MimeTypesEnum.Document, 'Google document'), [createNewItem]);
+
+  const createGoogleSheet = useCallback(() => createNewItem('file', MimeTypesEnum.Spreadsheet, 'Google spreadsheet'), [createNewItem]);
+
+  const createGoogleSlides = useCallback(() => createNewItem('file', MimeTypesEnum.Presentation, 'Google presentation'), [createNewItem]);
 
   // Show context menu
   useEffect(() => {
@@ -234,9 +247,18 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
     }
   }, [contextEvent, fileFromList, contextMenuRef]);
 
-  const openCreateMenuSubmenu = useCallback(() => {
-    toggleSubMenu(!subMenuOpen);
-  }, []);
+  const openCreateMenuSubmenu = useCallback((event: any) => {
+    event.stopPropagation();
+
+    if (subMenuRef.current) {
+      const triggerRect = event.currentTarget.getBoundingClientRect();
+
+      subMenuRef.current.style.left = `${triggerRect.right + 4}px`;
+      subMenuRef.current.style.top = `${triggerRect.top}px`;
+    }
+
+    toggleSubMenu(true);
+  }, [toggleSubMenu]);
 
   return (<>
     <div
@@ -321,17 +343,31 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
         className="ContextMenu__item item">
         Create more...
         <Icon>more_horiz</Icon>
+      </div>
+    </div>
 
-        <div
-          ref={subMenuRef}
-          className={`ContextMenu contextMenu ${subMenuOpen ? '' : 'hide'}`}>
-          <div
-            onClick={createGoogleDoc}
-            className="ContextMenu__item item">
-            Document
-            <Icon>description</Icon>
-          </div>
-        </div>
+    <div
+      ref={subMenuRef}
+      className={`ContextMenu ContextMenu__submenu_createMore contextMenu ${subMenuOpen ? '' : 'hide'}`}>
+      <div
+        onClick={createGoogleDoc}
+        className="ContextMenu__item item">
+        Google Docs
+        <Icon>description</Icon>
+      </div>
+
+      <div
+        onClick={createGoogleSheet}
+        className="ContextMenu__item item">
+        Google Sheets
+        <Icon>table_chart</Icon>
+      </div>
+
+      <div
+        onClick={createGoogleSlides}
+        className="ContextMenu__item item">
+        Google Slides
+        <Icon>slideshow</Icon>
       </div>
     </div>
   </>);
