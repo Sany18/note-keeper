@@ -571,6 +571,7 @@ export const Explorer: React.FC<Props> = () => {
             <button
               title='Refresh files list'
               onClick={() => fetchRootFilesList()}
+              disabled={isExplorerInProgress}
               className="LeftDrawer__button">
               <Icon size="1.4rem">refresh</Icon>
             </button>
@@ -581,7 +582,7 @@ export const Explorer: React.FC<Props> = () => {
               className="LeftDrawer__button">
               {fileUploadingInProgress
                 ? <Spinner size="1.4rem" />
-                : <Icon size="1.4rem">{sessionState.showDropzone ? 'close' : 'drive_export'}</Icon>
+                : <Icon size="1.4rem">{sessionState.showDropzone ? 'close' : 'cloud_upload'}</Icon>
               }
             </button>
           </>}

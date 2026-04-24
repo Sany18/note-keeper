@@ -193,6 +193,7 @@ export const _useGapi = () => {
 
   const fetchRootFilesList = useCallback(async () => {
     log.appEvent('App: fetching root files list');
+    setExplorerInProgress(true);
 
     try {
       const freshListOfRootEntities = await getGDList(getAllFromRootParams);
@@ -201,18 +202,14 @@ export const _useGapi = () => {
 
       const allUniqueEntities = getQniqueFilesAndUpdateOld(fileTree, wrappedRootFolder);
 
-      allUniqueEntities.forEach(childListElement => {
-        if (childListElement.mimeType === MimeTypesEnum.Folder && childListElement.folderOpen) {
-          fetchChildrenList(childListElement);
-        }
-      });
-
       setTree(allUniqueEntities);
     } catch (error) {
       log.error('App: Error getting root files list', error);
       setExplorerState({ error });
+    } finally {
+      setExplorerInProgress(false);
     }
-  }, [sessionState.isAppLoaded, gapiInitialized, getGDList, setExplorerState]);
+  }, [getGDList, createGDWrapperFolder, fileTree, setTree, setExplorerState, setExplorerInProgress]);
 
   /////////////////////////////////////////////
   // Upload batch of files to Google Drive
