@@ -94,5 +94,5 @@ FRONTEND_URL     # Used for CORS (empty = localhost in dev)
 ## Deployment
 
 - **GitHub Actions** (`.github/workflows/deploy.yml`) — triggers on `master` push; builds `fe/` and deploys to GitHub Pages
-- **VPS** — manual deploy via `ssh.sh` with Nginx reverse proxy (`nginx.conf`); backend runs as a Node process behind Nginx
+- **VPS** — manual deploy via `ssh.sh`; backend runs as a Node process on the server
 - **Cache busting** — increment `VITE_VERSION` in `.env.prod` before each production deploy to force service worker update

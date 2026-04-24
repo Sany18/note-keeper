@@ -32,46 +32,26 @@ const _useGoogleAuth = () => {
   }, [items[LocalStorageKeys.CURRENT_USER]]);
 
   useEffect(() => {
-    // Handle token returned via OAuth redirect (hash contains access_token)
-    const hash = window.location.hash;
-    if (hash.includes('access_token')) {
-      const params = new URLSearchParams(hash.slice(1));
-      const accessToken = params.get('access_token');
-      const scope = params.get('scope') || '';
-      const expiresIn = params.get('expires_in');
+    const initTokenCallback = (googleAccessTokenToGD) => {
+      const storedUser = getItem(LocalStorageKeys.CURRENT_USER) || getUserDefaultState();
+      googleAccessTokenToGD.receivedAt = new Date().toISOString();
+      storedUser.googleAccessTokenToGD = googleAccessTokenToGD;
+      storedUser.loggedIn = true;
+      storedUser.scopes = googleAccessTokenToGD.scope
+        .split(GDScopePrefix)
+        .map(s => s.trim())
+        .filter(Boolean);
 
-      if (accessToken) {
-        const storedUser = getItem(LocalStorageKeys.CURRENT_USER) || getUserDefaultState();
-        storedUser.googleAccessTokenToGD = {
-          access_token: accessToken,
-          expires_in: Number(expiresIn),
-          scope,
-          token_type: 'Bearer',
-          receivedAt: new Date().toISOString(),
-        };
-        storedUser.loggedIn = true;
-        storedUser.scopes = scope
-          .split(GDScopePrefix)
-          .map(s => s.trim())
-          .filter(Boolean);
-
-        setItem(LocalStorageKeys.CURRENT_USER, storedUser);
-        // Clean token from URL so it's not visible or reused on refresh
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-        log.appEvent('GoogleAuth: Access token received from redirect', storedUser);
-        document.dispatchEvent(new Event('loadFilesFromGoogleDrive'));
-      }
-    }
+      setItem(LocalStorageKeys.CURRENT_USER, storedUser);
+      log.appEvent('GoogleAuth: Access token received', storedUser);
+      document.dispatchEvent(new Event('loadFilesFromGoogleDrive'));
+    };
 
     const initGoogleAuth = () => {
-      // ux_mode: 'redirect' avoids the popup + storagerelay:// mechanism
-      // that Chrome flags as "legacy Google Sign-In".
-      // redirect_uri must be registered in Google Cloud Console → OAuth client → Authorized redirect URIs.
       googleSignInRef.current = window.google.accounts.oauth2.initTokenClient({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
         scope: minimalGDscopes.join(' '),
-        ux_mode: 'redirect',
-        redirect_uri: window.location.origin + window.location.pathname,
+        callback: initTokenCallback,
         include_granted_scopes: true,
         enable_granular_consent: true,
       });
@@ -104,6 +84,7 @@ const _useGoogleAuth = () => {
   const requestAdditionalScopes = useCallback(() => {
     if (googleSignInRef.current) {
       googleSignInRef.current.requestAccessToken({
+        prompt: 'none',
         scope: AllGDscopes.join(' '),
       });
     }
@@ -111,7 +92,7 @@ const _useGoogleAuth = () => {
 
   const login = useCallback(() => {
     if (googleSignInRef.current) {
-      googleSignInRef.current.requestAccessToken();
+      googleSignInRef.current.requestAccessToken({ prompt: 'select_account' });
     }
   }, []);
 
@@ -122,14 +103,8 @@ const _useGoogleAuth = () => {
 
   useEffect(() => {
     const newDrawerState = { ...drawerState };
-
-    if (currentUser.loggedIn) {
-      newDrawerState.open = true;
-      setDraverState(newDrawerState);
-    } else {
-      newDrawerState.open = false;
-      setDraverState(newDrawerState);
-    }
+    newDrawerState.open = !!currentUser.loggedIn;
+    setDraverState(newDrawerState);
   }, [currentUser.loggedIn]);
 
   return {

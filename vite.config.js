@@ -34,6 +34,11 @@ export default defineConfig(({ mode }) => {
     server: {
       port: env.PORT || 3000,
       host: true,
+      headers: {
+        // Allows GIS OAuth popup to communicate back via window.opener,
+        // which Chrome blocks by default and shows the "legacy Sign-In" dialog.
+        'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+      },
     },
     build: {
       outDir: '../build',
