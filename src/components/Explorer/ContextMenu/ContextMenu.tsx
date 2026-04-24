@@ -39,7 +39,7 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
   const { fileTree, setTree, updateFileInTree } = useExplorer();
 
   const { openUploadDialog } = useUploadFiles();
-  const { deleteGDFile, renameGDFile, createFile, rootId, changeFileParent } = useGapi();
+  const { deleteGDFile, renameGDFile, copyGDFile, createFile, rootId, changeFileParent } = useGapi();
 
   const contextMenuRef = useRef(null);
   const subMenuRef = useRef(null);
@@ -147,6 +147,45 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
         });
     }, 0);
   }, [selectedFiles, activeFileModel, activeFileInfo]);
+
+  const copyClickHandler = useCallback(() => {
+    toggleMenu(false);
+
+    setTimeout(() => {
+      if (!selectedFiles.length) return;
+
+      const filesToCopy = selectedFiles.filter(file => !file.isFolder);
+
+      if (!filesToCopy.length) {
+        window.alert('Folder copy is not supported yet.');
+        return;
+      }
+
+      if (filesToCopy.length !== selectedFiles.length) {
+        window.alert('Folders were skipped. Only files were copied.');
+      }
+
+      setFilesState({ inProgress: true });
+
+      Promise.all(filesToCopy.map(file => copyGDFile(file, file.parents?.[0])))
+        .then((responses) => {
+          let nextTree = fileTree;
+
+          responses.forEach((response) => {
+            const copiedFile = new File(response.result);
+            nextTree = appendChildToFolder<File>(nextTree, copiedFile.parents?.[0], copiedFile, true);
+          });
+
+          setTree(nextTree);
+        })
+        .catch((error) => {
+          log.error('Error copying file(s)', error);
+        })
+        .finally(() => {
+          setFilesState({ inProgress: false });
+        });
+    }, 0);
+  }, [selectedFiles, copyGDFile, fileTree, setTree]);
 
   const fileMoveCancel = useCallback(() => {
     setFilesState({ inProgress: false });
@@ -353,6 +392,14 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
             className="ContextMenu__item item">
             Rename
             <Icon>edit</Icon>
+          </div>
+
+          <div
+            title="Copy"
+            onClick={copyClickHandler}
+            className="ContextMenu__item item">
+            Copy
+            <Icon>content_copy</Icon>
           </div>
 
           {!moveFileToMode && <div

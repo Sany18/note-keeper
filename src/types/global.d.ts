@@ -15,6 +15,7 @@ declare global {
             list: (params: any) => Promise<{ result: { files: any[] } }>;
             get: (params: any) => Promise<{ result: any }>;
             create: (params: any) => Promise<{ result: any }>;
+            copy: (params: any) => Promise<{ result: any }>;
             update: (params: any) => Promise<{ result: any }>;
             delete: (params: any) => Promise<{ result: any }>;
           };

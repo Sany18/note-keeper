@@ -27,6 +27,7 @@ import { GDStorageQuota } from "dtos/googleDrive/storageQuota.dto";
 import { deleteFileForever } from "./googleDriveCRUD/deleteFIleForever";
 import { openPickerForFile } from "./googleDriveCRUD/filePicker";
 import { changeGDFileParent } from "./googleDriveCRUD/changeFileParent";
+import { copyFile } from "./googleDriveCRUD/copyFile";
 import { useGapiErrorHandler } from "./gapi-error-handler.hook";
 import { getAllFromRootParams, getChildrenParams } from "const/remoteStorageProviders/googleDrive/gapi.parameters";
 import googleDriveSvg from "assets/icons/google-drive.svg";
@@ -139,6 +140,8 @@ export const _useGapi = () => {
   const deleteGDFileForever = useCallback(deleteFileForever({ handleError }), [handleError]);
 
   const renameGDFile = useCallback(renameFile({ handleError }), [handleError]);
+
+  const copyGDFile = useCallback(copyFile({ handleError }), [handleError]);
 
   const createFile = useCallback(createGDFile({ handleError }), [handleError]);
 
@@ -278,6 +281,7 @@ export const _useGapi = () => {
     createFile,
     getFileInfo,
     renameGDFile,
+    copyGDFile,
     updateGDFile,
     deleteGDFile,
     uploadFileToGD,
