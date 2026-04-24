@@ -10,7 +10,6 @@ import ReactDOM from 'react-dom/client';
 import { RecoilRoot } from 'recoil';
 
 import { router } from './pages/router.tsx';
-import registerWorker from '../public/registerWorker';
 
 import 'assets/css/index.css';
 
@@ -31,5 +30,3 @@ root.render(
     }
   )
 );
-
-registerWorker(`${import.meta.env.BASE_URL}serviceWorker.js`);
