@@ -21,7 +21,6 @@ import { Icon } from 'components/Atoms/Icon/Icon';
 import { File } from 'dtos/file.model';
 import { Spinner } from 'components/Spinner/Spinner';
 import { ListItem } from './ListItem/ListItem';
-import { MyDevices } from './MyDevices/MyDevices';
 import { ContextMenu } from './ContextMenu/ContextMenu';
 import { MimeTypesEnum } from 'const/mimeTypes/mimeTypes.const';
 import { mainFolderName } from 'const/remoteStorageProviders/googleDrive/mainFolderName';
@@ -441,8 +440,6 @@ export const Explorer: React.FC<Props> = () => {
           key={f.id}
           fileFromList={f} />)
         }
-
-        <MyDevices />
 
         <div className='LeftDrawer__bottom'>
         </div>

@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     root: 'src',
+    envDir: path.resolve(process.cwd()),
     publicDir: '../public',
     server: {
       port: env.PORT || 3000,

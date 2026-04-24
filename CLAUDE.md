@@ -48,7 +48,7 @@ pnpm preview      # Preview production build
 ```
 App.tsx
 ├── Header + Menu
-├── Explorer (file tree + MyDevices panel)
+├── Explorer (file tree)
 ├── FileViewer (TextEditor | PDFViewer | ImageViewer | PasswordEditor)
 ├── DropFileUpload (drag-and-drop overlay)
 └── Loader

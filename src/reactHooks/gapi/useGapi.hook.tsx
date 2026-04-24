@@ -19,7 +19,6 @@ import { getGDFile } from "./googleDriveCRUD/getFile";
 import { deleteFile } from "./googleDriveCRUD/deleteFile";
 import { renameFile } from "./googleDriveCRUD/renameFile";
 import { updateFile } from "./googleDriveCRUD/updateFile";
-import { AllGDscopes } from "const/remoteStorageProviders/googleDrive/GDScopes";
 import { uploadFiles } from "./googleDriveCRUD/uploadFIles";
 import { createGDFile } from "./googleDriveCRUD/createFile";
 import { getGDFileInfo } from "./googleDriveCRUD/getFileInfo";
@@ -54,15 +53,11 @@ export const _useGapi = () => {
     log.appEvent('Initializing gapi...');
 
     const initGapi = () => {
-      window.gapi.load('client:auth2', async () => {
+      window.gapi.load('client', async () => {
         try {
-          // Here is nothing to return
           await window.gapi.client.init({
             apiKey: import.meta.env.VITE_GOOGLE_WEB_API_KEY,
-            clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
             discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-            scope: AllGDscopes.join(' '),
-            pluginName: 'gapi.auth2',
           });
 
           window.gapi.load('picker');
@@ -99,6 +94,24 @@ export const _useGapi = () => {
       gapiCallbacks.push(callback);
     }
   }, [gapiInitialized, gapiCallbacks]);
+
+  // Forward GIS access token to gapi client (replaces auth2 token management)
+  useEffect(() => {
+    const token = currentUser.googleAccessTokenToGD?.access_token;
+    if (gapiInitialized && token) {
+      window.gapi.client.setToken({ access_token: token });
+    }
+  }, [gapiInitialized, currentUser.googleAccessTokenToGD?.access_token]);
+
+  const getGDInfo = useCallback(async () => {
+    try {
+      return await window.gapi.client.drive.about.get({
+        fields: 'storageQuota'
+      });
+    } catch (error: any) {
+      handleError('getGDInfo', error);
+    }
+  }, [gapiInitialized, handleError]);
 
   // Get quota info
   useEffect(() => {
@@ -246,17 +259,6 @@ export const _useGapi = () => {
       });
     }
   }, [filesListState.fileTree, fileUploading, uploadFileToGD]);
-
-  // Get quota info
-  const getGDInfo = useCallback(async () => {
-    try {
-      return await window.gapi.client.drive.about.get({
-        fields: 'storageQuota'
-      });
-    } catch (error) {
-      handleError('getGDInfo', error);
-    }
-  }, [gapiInitialized, handleError]);
 
     //////////////////////////////////////////
   // Get root files list on app load

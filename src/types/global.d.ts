@@ -2,13 +2,27 @@ export {}
 
 declare global {
   interface Window {
-    // Minimal gapi interface - only for loading picker
     gapi: {
-      load: (api: string, config?: { callback?: () => void; onerror?: () => void }) => void;
+      load: (api: string, callback?: (() => void) | { callback?: () => void; onerror?: () => void }) => void;
+      client: {
+        init: (config: { apiKey?: string; discoveryDocs?: string[] }) => Promise<void>;
+        setToken: (token: { access_token: string } | null) => void;
+        drive: {
+          about: {
+            get: (params: { fields: string }) => Promise<{ result: any }>;
+          };
+          files: {
+            list: (params: any) => Promise<{ result: { files: any[] } }>;
+            get: (params: any) => Promise<{ result: any }>;
+            create: (params: any) => Promise<{ result: any }>;
+            update: (params: any) => Promise<{ result: any }>;
+            delete: (params: any) => Promise<{ result: any }>;
+          };
+        };
+      };
     };
     google: {
       picker: {
-        // Google Picker API types
         PickerBuilder: any;
         DocsView: any;
         Response: any;
@@ -22,5 +36,6 @@ declare global {
       };
     };
     WebFont: any;
+    initGapi: () => void;
   }
 }

@@ -1,19 +1,30 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "es2015", "esnext"],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "jsx": "react-jsx",
     "esModuleInterop": true,
-    "types": ["node", "react", "react-dom"],
+    "types": ["react", "react-dom"],
     "target": "es2022",
-    "module": "es2022",
-    "baseUrl": "./src",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "assets/*": ["./src/assets/*"],
+      "components/*": ["./src/components/*"],
+      "config": ["./src/config.ts"],
+      "const/*": ["./src/const/*"],
+      "dtos/*": ["./src/dtos/*"],
+      "reactHooks/*": ["./src/reactHooks/*"],
+      "services/*": ["./src/services/*"],
+      "state/*": ["./src/state/*"]
+    },
     "noEmit": true,
     "allowJs": true,
     "sourceMap": true,
     "removeComments": true,
-    "moduleResolution": "node",
     "preserveConstEnums": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "skipLibCheck": true
   },
   "include": ["src/**/*", "public"],
   "exclude": ["node_modules", "build"]
