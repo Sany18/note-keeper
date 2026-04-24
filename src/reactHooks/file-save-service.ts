@@ -11,24 +11,6 @@ export const useFileSaveService = () => {
   const { updateGDFile } = useGapi();
   const { activeFileInfo, setActiveFileInfo, setActiveFileContent } = useActiveFile();
 
-  const saveLocallyDebounced = useDebouncedCallback((content) => {
-    // log.appEvent("FileViewer: Saving content locally. File ID:", currentFile.fileInfoFromRemoteStorage?.name);
-    saveLocally(content);
-  }, localSaveDebounceTime);
-
-  const saveLocally = useCallback((content) => {
-    saveLocallyDebounced.cancel();
-
-    setActiveFileContent(content);
-    setActiveFileInfo({
-      contentUpdatedLocalyAt: new Date().toISOString(),
-      isFileSavedToRemoteStorage: false,
-      isFileSavedLocaly: true,
-      isFileChangedLocaly: true,
-      isFileUpdatedFromRemoteStorage: false,
-    });
-  }, [saveLocallyDebounced, activeFileInfo?.fileInfoFromRemoteStorage?.id, setActiveFileInfo]);
-
   const saveFileToGD = (content) => {
     if (!activeFileInfo.fileInfoFromRemoteStorage) {
       log.error("FileViewer: File not saved. fileInfoFromRemoteStorage is not defined.");
@@ -36,14 +18,25 @@ export const useFileSaveService = () => {
     }
 
     if (activeFileInfo.fileInfoFromRemoteStorage && content !== null && content !== undefined) {
-      saveLocally(content);
+      setActiveFileContent(content);
+      setActiveFileInfo({
+        contentUpdatedLocalyAt: new Date().toISOString(),
+        isFileSavedToRemoteStorage: false,
+        isFileSavedLocaly: false,
+        isFileChangedLocaly: true,
+        isFileUpdatedFromRemoteStorage: false,
+      });
+
       updateGDFile(activeFileInfo.fileInfoFromRemoteStorage, content)
     }
   };
 
+  const saveFileToGDDebounced = useDebouncedCallback((content) => {
+    saveFileToGD(content);
+  }, localSaveDebounceTime);
+
   return {
-    saveLocally, // Do not use this function directly. Only for file-save-service
     saveFileToGD,
-    saveLocallyDebounced,
+    saveFileToGDDebounced,
   };
 }

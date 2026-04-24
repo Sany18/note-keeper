@@ -12,7 +12,6 @@ import { Menu } from "./Menu/Menu";
 
 import "./Header.css";
 import { activeFileInfoSelector } from "state/localState/activeFile/activeFileInfoState";
-import { capitalize } from "services/byJSTypes/string.service";
 import { editorNameByType } from "components/FileViewers/FileViewers.types";
 
 type Props = {
@@ -21,7 +20,7 @@ type Props = {
 
 export const Header: React.FC<Props> = ({ simpleView }) => {
   const [drawerState, setDraverState] = useRecoilState(leftDrawerSelector);
-  const [activeFileInfo, setActiveFileInfo] = useRecoilState(activeFileInfoSelector);
+  const [activeFileInfo] = useRecoilState(activeFileInfoSelector);
 
   const { currentUser, login } = useGoogleAuth();
 
@@ -57,7 +56,7 @@ export const Header: React.FC<Props> = ({ simpleView }) => {
         }
 
         <div className="Header__buttons">
-          {editorNameByType[activeFileInfo.viewType]}
+          {loggedIn && activeFileInfo?.viewType && editorNameByType[activeFileInfo.viewType]}
         </div>
       </div>
 

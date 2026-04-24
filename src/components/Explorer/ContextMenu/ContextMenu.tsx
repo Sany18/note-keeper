@@ -32,7 +32,7 @@ type Props = {
 export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
   const resetCurrentFileInfo = useResetRecoilState(activeFileInfoSelector);
   const resetCurrentFileContent = useResetRecoilState(activeFileContentSelector);
-  const [, setFilesState] = useRecoilState(explorerSelector);
+  const [filesState, setFilesState] = useRecoilState(explorerSelector);
   const [drawerState, setDrawerState] = useRecoilState(leftDrawerSelector);
 
   const { activeFileInfo, activeFileModel, setActiveFileModel, setActiveFileInfo } = useActiveFile();
@@ -61,6 +61,18 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
 
   const closestParentFolder = useMemo(() => getClosestParentFolder(fileTree, fileFromList), [fileTree, fileFromList]);
   const isNotDraggableElement = useMemo(() => fileFromList?.draggable === false, [currentListItemEl]);
+  const selectedFiles = useMemo(() => {
+    if (!fileFromList) return [];
+
+    const selectedFileIds = filesState.selectedFileIds || [];
+    const shouldUseSelection = selectedFileIds.includes(fileFromList.id);
+    const actionFileIds = shouldUseSelection ? selectedFileIds : [fileFromList.id];
+
+    return actionFileIds
+      .map(fileId => findElementInTree(fileTree, fileId))
+      .filter(Boolean)
+      .filter(file => file.draggable !== false);
+  }, [fileFromList, filesState.selectedFileIds, fileTree]);
 
   const moveFileToMode = drawerState.mode === LeftDrawerModes.FileMoveTo;
 
@@ -96,18 +108,49 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
     toggleMenu(false);
 
     setTimeout(() => {
-      const newName = window.prompt(
-        `Rename "${fileFromList.name}" to:`,
-        fileFromList.name
-      );
+      if (!selectedFiles.length) return;
 
-      if (newName) renameSaveHandler(newName);
+      const renameTargets = selectedFiles;
+      const multipleFiles = renameTargets.length > 1;
+
+      if (multipleFiles && !window.confirm(`Rename ${renameTargets.length} selected items?`)) {
+        return;
+      }
+
+      setFilesState({ inProgress: true });
+
+      Promise.all(renameTargets.map((targetFile) => {
+        const nextName = window.prompt(
+          `Rename "${targetFile.name}" to:`,
+          targetFile.name
+        );
+
+        if (!nextName || nextName === targetFile.name) return Promise.resolve();
+
+        return renameGDFile(targetFile, nextName)
+          .then(() => {
+            const updatedFile = new File({ ...targetFile, name: nextName });
+
+            updateFileInTree(updatedFile);
+
+            if (activeFileModel?.id === updatedFile.id || activeFileInfo?.fileInfoFromRemoteStorage?.id === updatedFile.id) {
+              setActiveFileModel(updatedFile);
+              setActiveFileInfo({ fileInfoFromRemoteStorage: updatedFile });
+            }
+          });
+      }))
+        .catch(e => {
+          log.error('Error renaming file(s)', e);
+        })
+        .finally(() => {
+          setFilesState({ inProgress: false });
+        });
     }, 0);
-  }, [fileFromList]);
+  }, [selectedFiles, activeFileModel, activeFileInfo]);
 
   const fileMoveCancel = useCallback(() => {
     setFilesState({ inProgress: false });
-    setDrawerState({ mode: LeftDrawerModes.Explorer, fileToMove: null });
+    setDrawerState({ mode: LeftDrawerModes.Explorer, fileToMove: null, fileIdsToMove: [] });
   }, [setFilesState, setDrawerState]);
 
   const moveToClickHandler = useCallback(() => {
@@ -118,57 +161,94 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
         // Move file here
         setFilesState({ inProgress: true });
 
-        const fileToMove = drawerState.fileToMove;
         const closestParentFolder = getClosestParentFolder(fileTree, fileFromList);
-        const updatedFile = new File({ ...fileToMove, parents: [closestParentFolder.id] });
+        const targetFolderId = closestParentFolder.id;
+        const fileIdsToMove = drawerState.fileIdsToMove?.length
+          ? drawerState.fileIdsToMove
+          : drawerState.fileToMove?.id
+            ? [drawerState.fileToMove.id]
+            : [];
 
-        // If file is already in the folder
-        if (closestParentFolder.id === fileToMove.parents[0]) return fileMoveCancel();
+        const filesToMove = fileIdsToMove
+          .map(id => findElementInTree(fileTree, id))
+          .filter(Boolean)
+          .filter(file => file.id !== targetFolderId && file.parents?.[0] !== targetFolderId);
 
-        // If user cancels the move
-        if (!window.confirm(`Move "${fileToMove.name}" to "${closestParentFolder.name}"?`)) return fileMoveCancel();
+        if (!filesToMove.length) return fileMoveCancel();
 
-        changeFileParent(fileToMove, closestParentFolder.id)
-          .then(() => updateFileInTree(updatedFile))
-          .catch(e => log.error('Error moving file', e))
+        const moveMessage = filesToMove.length > 1
+          ? `Move ${filesToMove.length} selected items to "${closestParentFolder.name}"?`
+          : `Move "${filesToMove[0].name}" to "${closestParentFolder.name}"?`;
+
+        if (!window.confirm(moveMessage)) return fileMoveCancel();
+
+        Promise.all(filesToMove.map(fileToMove =>
+          changeFileParent(fileToMove, targetFolderId)
+            .then(() => {
+              const updatedFile = new File({ ...fileToMove, parents: [targetFolderId] });
+              updateFileInTree(updatedFile);
+            })
+        ))
+          .catch(e => log.error('Error moving file(s)', e))
           .finally(fileMoveCancel);
       } else {
+        const fileIdsToMove = selectedFiles.length > 1
+          ? selectedFiles.map(file => file.id)
+          : [fileFromList.id];
+
         setDrawerState({
           mode: LeftDrawerModes.FileMoveTo,
-          fileToMove: fileFromList
+          fileToMove: fileFromList,
+          fileIdsToMove,
         });
       }
     }, 0);
-  }, [fileFromList, fileTree, setDrawerState, changeFileParent, updateFileInTree, fileMoveCancel]);
+  }, [fileFromList, fileTree, setDrawerState, changeFileParent, updateFileInTree, fileMoveCancel, drawerState.fileToMove, drawerState.fileIdsToMove, selectedFiles]);
 
   const delefeFile = useCallback(() => {
     toggleMenu(false);
 
     setTimeout(() => {
-      if (!window.confirm(`Are you sure you want to delete "${fileFromList.name}"?`)) {
+      if (!selectedFiles.length) return;
+
+      const deleteMessage = selectedFiles.length > 1
+        ? `Are you sure you want to delete ${selectedFiles.length} selected items?`
+        : `Are you sure you want to delete "${selectedFiles[0].name}"?`;
+
+      if (!window.confirm(deleteMessage)) {
         return;
       }
 
       setFilesState({ inProgress: true });
 
-      deleteGDFile(fileFromList)
+      Promise.all(selectedFiles.map(file => deleteGDFile(file)))
         .then(() => {
-          setTree(removeElementFromTree(fileTree, fileFromList.id));
+          let nextTree = fileTree;
 
-          if (fileFromList.id === activeFileInfo?.fileInfoFromRemoteStorage?.id || fileFromList.id === activeFileModel?.id) {
+          selectedFiles.forEach(file => {
+            nextTree = removeElementFromTree(nextTree, file.id);
+          });
+
+          setTree(nextTree);
+
+          const deletedFileIds = selectedFiles.map(file => file.id);
+
+          if (deletedFileIds.includes(activeFileInfo?.fileInfoFromRemoteStorage?.id) || deletedFileIds.includes(activeFileModel?.id)) {
             resetCurrentFileInfo();
             resetCurrentFileContent();
             setFilesState({ activeFileModel: null });
           }
+
+          setFilesState({ selectedFileIds: [], lastSelectedFileId: null });
         })
         .catch(e => {
-          log.error('Error deleting file', e);
+          log.error('Error deleting file(s)', e);
         })
         .finally(() => {
           setFilesState({ inProgress: false });
         });
     }, 0);
-  }, [fileTree, activeFileInfo, activeFileModel, fileFromList, setFilesState]);
+  }, [fileTree, activeFileInfo, activeFileModel, fileFromList, setFilesState, selectedFiles]);
 
   const onUploadFilesToFolder = useCallback(() => {
     toggleMenu(false);

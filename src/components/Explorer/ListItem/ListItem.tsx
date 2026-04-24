@@ -17,9 +17,11 @@ import "../ExplorerListItem.css";
 
 type Props = {
   fileFromList: File;
+  selectedFileIds?: string[];
+  onListItemClick?: (file: File, e: React.MouseEvent) => boolean;
 };
 
-export const ListItem: React.FC<Props> = ({ fileFromList }) => {
+export const ListItem: React.FC<Props> = ({ fileFromList, selectedFileIds = [], onListItemClick }) => {
   const [isDragover, setIsDragover] = useState(false);
 
   const { fetchChildrenList } = useGapi();
@@ -28,7 +30,11 @@ export const ListItem: React.FC<Props> = ({ fileFromList }) => {
 
   const { loadFileFromRS, inProgress, setInProgress } = useFileViewerService();
 
-  const toggleItem = useCallback(() => {
+  const toggleItem = useCallback((e: React.MouseEvent) => {
+    const shouldOpenFile = onListItemClick ? onListItemClick(fileFromList, e) : true;
+
+    if (!shouldOpenFile) return;
+
     if (!activeFileInfo?.isFileSavedToRemoteStorage) {
       appEvents.onSaveToGoogleDrive.emit();
     }
@@ -63,6 +69,7 @@ export const ListItem: React.FC<Props> = ({ fileFromList }) => {
           ListItem__content
           ${isDragover ? 'dragover' : ''}
           ${fileFromList.folderOpen ? 'folderOpen' : ''}
+          ${selectedFileIds.includes(fileFromList.id) ? 'selectedFile' : ''}
           ${activeFileInfo?.fileInfoFromRemoteStorage?.id === fileFromList.id ? 'activeFile' : ''}
         `.replace(/\n/g, '').trim()}>
 
@@ -93,7 +100,9 @@ export const ListItem: React.FC<Props> = ({ fileFromList }) => {
       {fileFromList.folderOpen && fileFromList.children && <div className="ListItem__children">
         {fileFromList.children.map(f => <ListItem
           key={f.id}
-          fileFromList={f} />)
+          fileFromList={f}
+          selectedFileIds={selectedFileIds}
+          onListItemClick={onListItemClick} />)
         }
       </div>}
     </div>

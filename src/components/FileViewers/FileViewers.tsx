@@ -20,6 +20,8 @@ import { WelcomePage } from "components/WelcomePage/WelcomePage";
 import { MimeTypesEnum } from "const/mimeTypes/mimeTypes.const";
 import { mainFolderName } from "const/remoteStorageProviders/googleDrive/mainFolderName";
 import googleDriveSvg from "assets/icons/google-drive.svg";
+import { useRecoilState } from "recoil";
+import { explorerSelector } from "state/localState/explorerState";
 
 import "./FileViewers.css";
 
@@ -33,6 +35,7 @@ const PasswordEditor = lazy(() => import('./Viewers/PasswordEditor/PasswordEdito
 type Props = {};
 
 export const FileViewer: React.FC<Props> = () => {
+  const [, setFilesState] = useRecoilState(explorerSelector);
   const { setExplorerInProgress, setTree } = useExplorer();
   const {
     activeFileModel,
@@ -211,6 +214,14 @@ export const FileViewer: React.FC<Props> = () => {
     </>
   }
 
+  const deselectExplorerFiles = () => {
+    setFilesState({
+      selectedFileIds: [],
+      lastSelectedFileId: null,
+      selectionAnchorFileId: null,
+    });
+  }
+
   const currentViewer = () => {
     if (!currentUser?.loggedIn) {
       return <WelcomePage />
@@ -263,7 +274,9 @@ export const FileViewer: React.FC<Props> = () => {
   };
 
   return (
-    <div className="FileViewer__container">
+    <div
+      className="FileViewer__container"
+      onClick={deselectExplorerFiles}>
       <div className="FileViewer__topBar">
         {message &&
           <div className={`FileViewer__message ${message.type}`}>
@@ -277,7 +290,7 @@ export const FileViewer: React.FC<Props> = () => {
         {currentViewer()}
       </div>
 
-      {activeFileModel &&
+      {currentUser?.loggedIn && activeFileModel &&
         <div className='FileViewer__bottomBar'>
           <div className="FileViewer__bottomBar__left">
             {activeFileModel?.extension}

@@ -18,7 +18,7 @@ type ParsedPassword = {
 }
 
 const PasswordEditor: React.FC<Props> = () => {
-  const { saveLocallyDebounced, saveFileToGD } = useFileSaveService();
+  const { saveFileToGDDebounced, saveFileToGD } = useFileSaveService();
   const { activeFileInfo, setActiveFileInfo, activeFileContent } = useActiveFile();
 
   const [parsedPasswords, setParsedPasswords] = useState<ParsedPassword[]>([]);
@@ -50,7 +50,7 @@ const PasswordEditor: React.FC<Props> = () => {
 
   // Save JSON string to file and update state
   const onFileUpdateHandler = useCallback(() => {
-    saveLocallyDebounced(content());
+    saveFileToGDDebounced(content());
 
     const { isFileSavedToRemoteStorage, isFileSavedLocaly, isFileChangedLocaly } = activeFileInfo;
     if (isFileSavedToRemoteStorage || isFileSavedLocaly || !isFileChangedLocaly) {
@@ -60,7 +60,7 @@ const PasswordEditor: React.FC<Props> = () => {
         isFileChangedLocaly: true,
       });
     }
-  }, [activeFileInfo, setActiveFileInfo, saveLocallyDebounced, content]);
+  }, [activeFileInfo, setActiveFileInfo, saveFileToGDDebounced, content]);
 
   // Add a new password entry and update JSON content
   const addPassword = useCallback((name: string, password: string) => {

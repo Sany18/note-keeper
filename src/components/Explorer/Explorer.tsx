@@ -110,7 +110,7 @@ const isExternalFilesDrop = (e: DragEvent): boolean => {
 export const Explorer: React.FC<Props> = () => {
   const [appState] = useRecoilState(appSelector);
   const [sessionState] = useRecoilState(sessionSelector);
-  const [, setFilesState] = useRecoilState(explorerSelector);
+  const [filesState, setFilesState] = useRecoilState(explorerSelector);
   const [drawerState, setDrawerState] = useRecoilState(leftDrawerSelector);
 
   const { activeFileModel, setActiveFileModel, setActiveFileInfo } = useActiveFile();
@@ -129,6 +129,7 @@ export const Explorer: React.FC<Props> = () => {
   const defaultWidth = Math.min(300, window.innerWidth - minWidth);
 
   const moveFileToMode = drawerState.mode === LeftDrawerModes.FileMoveTo;
+  const selectedFilesCount = filesState.selectedFileIds?.length || 0;
 
   ////////////////////////////
   // Buisness logic
@@ -136,6 +137,76 @@ export const Explorer: React.FC<Props> = () => {
   const getListElement = useCallback((element: HTMLElement) => {
     return getDOMParrentElement(element, 'ListItem');
   }, []);
+
+  const getVisibleFileIds = useCallback(() => {
+    return Array.from(document.querySelectorAll('.LeftDrawer__tree .ListItem[data-fileid]'))
+      .map((el: Element) => (el as HTMLElement).dataset.fileid)
+      .filter(Boolean) as string[];
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setFilesState({
+      selectedFileIds: [],
+      lastSelectedFileId: null,
+      selectionAnchorFileId: null,
+    });
+  }, [setFilesState]);
+
+  const handleListItemClick = useCallback((clickedFile: File, e: React.MouseEvent) => {
+    const clickedId = clickedFile.id;
+    const currentSelection = filesState.selectedFileIds || [];
+
+    if (e.shiftKey && (filesState.selectionAnchorFileId || filesState.lastSelectedFileId)) {
+      const visibleFileIds = getVisibleFileIds();
+      const anchorId = filesState.selectionAnchorFileId || filesState.lastSelectedFileId;
+      const startIndex = visibleFileIds.indexOf(anchorId);
+      const endIndex = visibleFileIds.indexOf(clickedId);
+
+      if (startIndex >= 0 && endIndex >= 0) {
+        const [from, to] = startIndex < endIndex
+          ? [startIndex, endIndex]
+          : [endIndex, startIndex];
+
+        const rangeSelection = visibleFileIds.slice(from, to + 1);
+
+        setFilesState({
+          selectedFileIds: rangeSelection,
+          lastSelectedFileId: clickedId,
+          selectionAnchorFileId: anchorId,
+        });
+      } else {
+        setFilesState({
+          selectedFileIds: [clickedId],
+          lastSelectedFileId: clickedId,
+          selectionAnchorFileId: clickedId,
+        });
+      }
+
+      return false;
+    }
+
+    if (e.metaKey || e.ctrlKey) {
+      const nextSelection = currentSelection.includes(clickedId)
+        ? currentSelection.filter(id => id !== clickedId)
+        : [...currentSelection, clickedId];
+
+      setFilesState({
+        selectedFileIds: nextSelection,
+        lastSelectedFileId: clickedId,
+        selectionAnchorFileId: clickedId,
+      });
+
+      return false;
+    }
+
+    setFilesState({
+      selectedFileIds: [clickedId],
+      lastSelectedFileId: clickedId,
+      selectionAnchorFileId: clickedId,
+    });
+
+    return true;
+  }, [filesState.selectedFileIds, filesState.lastSelectedFileId, filesState.selectionAnchorFileId, getVisibleFileIds]);
 
   const renameActiveFile = useCallback(() => {
     const newName = window.prompt(
@@ -194,6 +265,45 @@ export const Explorer: React.FC<Props> = () => {
         e.preventDefault();
         toggleDrawer();
       }
+
+      if (e.code === 'Escape' && selectedFilesCount > 0) {
+        e.preventDefault();
+        clearSelection();
+      }
+
+      if (e.shiftKey && (e.code === 'ArrowDown' || e.code === 'ArrowUp')) {
+        const visibleFileIds = getVisibleFileIds();
+        if (!visibleFileIds.length) return;
+
+        const currentId = filesState.lastSelectedFileId
+          || filesState.selectedFileIds?.[filesState.selectedFileIds.length - 1]
+          || filesState.selectionAnchorFileId
+          || visibleFileIds[0];
+        const anchorId = filesState.selectionAnchorFileId || currentId;
+
+        const currentIndex = visibleFileIds.indexOf(currentId);
+        const safeCurrentIndex = currentIndex >= 0 ? currentIndex : 0;
+        const nextIndex = e.code === 'ArrowDown'
+          ? Math.min(safeCurrentIndex + 1, visibleFileIds.length - 1)
+          : Math.max(safeCurrentIndex - 1, 0);
+        const nextId = visibleFileIds[nextIndex];
+
+        if (!nextId) return;
+
+        e.preventDefault();
+
+        const anchorIndex = visibleFileIds.indexOf(anchorId);
+        const safeAnchorIndex = anchorIndex >= 0 ? anchorIndex : safeCurrentIndex;
+        const [from, to] = safeAnchorIndex < nextIndex
+          ? [safeAnchorIndex, nextIndex]
+          : [nextIndex, safeAnchorIndex];
+
+        setFilesState({
+          selectedFileIds: visibleFileIds.slice(from, to + 1),
+          lastSelectedFileId: nextId,
+          selectionAnchorFileId: visibleFileIds[safeAnchorIndex],
+        });
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown);
@@ -201,7 +311,7 @@ export const Explorer: React.FC<Props> = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     }
-  }, [drawerState, renameActiveFile]);
+  }, [drawerState, renameActiveFile, selectedFilesCount, clearSelection, filesState.lastSelectedFileId, filesState.selectionAnchorFileId, filesState.selectedFileIds, getVisibleFileIds]);
 
   // Move file on drag and drop
   useEffect(() => {
@@ -209,7 +319,7 @@ export const Explorer: React.FC<Props> = () => {
     let targetFolderId: string;
 
     const handleDragStart = (e: DragEvent) => {
-      movedFileId = (e.target as HTMLElement).dataset.fileid;
+      movedFileId = getListElement(e.target as HTMLElement)?.dataset.fileid || '';
     }
 
     const handleDragEnd = () => {
@@ -223,11 +333,21 @@ export const Explorer: React.FC<Props> = () => {
         if (e.dataTransfer) {
           e.dataTransfer.dropEffect = 'copy';
         }
+
+        return;
+      }
+
+      if (movedFileId) {
+        e.preventDefault();
+
+        if (e.dataTransfer) {
+          e.dataTransfer.dropEffect = 'move';
+        }
       }
     }
 
     const handleDrop = async (e: DragEvent) => {
-      if (isExternalFilesDrop(e)) {
+      if (isExternalFilesDrop(e) || movedFileId) {
         e.preventDefault();
       }
 
@@ -264,6 +384,10 @@ export const Explorer: React.FC<Props> = () => {
       if (!targetFolderId) return;
 
       const fileToMove = getFileFromTreeById(movedFileId);
+      const selectedFileIds = filesState.selectedFileIds || [];
+      const movedFileIds = selectedFileIds.includes(movedFileId)
+        ? selectedFileIds
+        : [movedFileId];
       let targetFolder = getFileFromTreeById(targetFolderId);
 
       // If the file is not a folder
@@ -276,20 +400,27 @@ export const Explorer: React.FC<Props> = () => {
         }
       }
 
-      // If the file is already in the folder
-      if (fileToMove.id === targetFolderId || fileToMove.parents.includes(targetFolderId)) return;
+      const filesToMove = movedFileIds
+        .map(id => getFileFromTreeById(id))
+        .filter(Boolean)
+        .filter(file => file.id !== targetFolderId && !file.parents.includes(targetFolderId));
 
-      if (window.confirm(`Move "${fileToMove.name}" to "${targetFolder?.name || mainFolderName}"?`)) {
-        setFilesState({ inProgress: false });
+      if (!filesToMove.length) return;
 
-        changeFileParent(fileToMove, targetFolderId)
-          .then(() => {
-            const updatedFile = { ...fileToMove, parents: [targetFolderId] };
+      const targetFolderName = targetFolder?.name || mainFolderName;
+      const moveMessage = filesToMove.length > 1
+        ? `Move ${filesToMove.length} selected items to "${targetFolderName}"?`
+        : `Move "${filesToMove[0].name}" to "${targetFolderName}"?`;
 
-            updateFileInTree(updatedFile);
-          })
+      if (window.confirm(moveMessage)) {
+        setFilesState({ inProgress: true });
+
+        Promise.all(filesToMove.map(file =>
+          changeFileParent(file, targetFolderId)
+            .then(() => updateFileInTree({ ...file, parents: [targetFolderId] }))
+        ))
           .catch(e => {
-            log.error('Error moving file', e);
+            log.error('Error moving file(s)', e);
           })
           .finally(() => {
             setFilesState({ inProgress: false });
@@ -308,7 +439,7 @@ export const Explorer: React.FC<Props> = () => {
       document.removeEventListener('dragover', handleDragOver);
       document.removeEventListener('drop', handleDrop);
     }
-  }, [activeFileModel, rootFolderId, getFileFromTreeById, uploadFiles, fileTree]);
+  }, [activeFileModel, rootFolderId, getFileFromTreeById, uploadFiles, fileTree, filesState.selectedFileIds]);
 
   ////////////////////////////
   // Open/close drawer
@@ -416,6 +547,7 @@ export const Explorer: React.FC<Props> = () => {
         <div className='LeftDrawer__titleLeft'>
           {drawerState.mode === LeftDrawerModes.Explorer && <>
             Explorer
+            {selectedFilesCount > 0 && ` (${selectedFilesCount} selected)`}
           </>}
 
           {drawerState.mode === LeftDrawerModes.FileMoveTo && <>
@@ -475,7 +607,9 @@ export const Explorer: React.FC<Props> = () => {
       <div className='LeftDrawer__tree'>
         {fileTree?.map((f) => <ListItem
           key={f.id}
-          fileFromList={f} />)
+          fileFromList={f}
+          selectedFileIds={filesState.selectedFileIds}
+          onListItemClick={handleListItemClick} />)
         }
 
         <div className='LeftDrawer__bottom'>

@@ -8,6 +8,7 @@ export const defaultLeftDrawerState = {
   mode: LeftDrawerModes.Explorer,
   width: 300,
   fileToMove: null as File,
+  fileIdsToMove: [] as string[],
 }
 
 export const leftDrawerState = atom({

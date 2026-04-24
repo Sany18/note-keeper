@@ -10,7 +10,7 @@ import { GapiError } from "dtos/googleDrive/error.dto";
 
 export const useGapiErrorHandler = () => {
   const { setItem } = useLocalStorage();
-  const { currentUser } = useGoogleAuth();
+  const { currentUser, refreshAccessTokenSilently } = useGoogleAuth();
   const { activeFileInfo, setActiveFileInfo } = useActiveFile();
 
   const checkGDAccessToken = useCallback(() => {
@@ -50,10 +50,18 @@ export const useGapiErrorHandler = () => {
       // currentUser.loggedIn = false;
 
       setItem(LocalStorageKeys.CURRENT_USER, currentUser);
+
+      if (errorStatusCode === 401) {
+        const refreshStarted = refreshAccessTokenSilently();
+
+        if (!refreshStarted) {
+          log.appEvent('GoogleAuth: silent token refresh skipped (cooldown/in-progress/popup-blocked).');
+        }
+      }
     }
 
     return errorMessage;
-  }, [activeFileInfo, checkGDAccessToken]);
+  }, [activeFileInfo, checkGDAccessToken, refreshAccessTokenSilently]);
 
   return {
     handleError,

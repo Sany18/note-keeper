@@ -4,6 +4,7 @@ import { LocalStorageKeys, useLocalStorage } from "reactHooks/localStorage/local
 
 import { log } from "services/log/log.service";
 import { deepClone } from "services/byJSTypes/objectHelpers.service";
+import { getViewTypeFromFile } from "services/fileTypeConverter/getFileTypeFromName";
 
 import { appSelector } from "state/localState/appState";
 import { sessionSelector } from "state/sessionState/sessionState";
@@ -12,6 +13,7 @@ import { activeFileInfoSelector } from "state/localState/activeFile/activeFileIn
 import { useRecoilState, useSetRecoilState } from "recoil";
 
 import { activeFileContentSelector } from "state/localState/activeFile/activeFileContentState";
+import { ViewerType } from "components/FileViewers/FileViewers.types";
 
 const ignoreStateKeys = [
   'isFileSavingToRemoteStorage',
@@ -90,11 +92,41 @@ export const useAppState = () => {
 
   const _loadFileFromRS = async (allStates) => {
     const { activeFileInfoState } = allStates;
-    const fileInfoFromRemoteStorage = activeFileInfoState.fileInfoFromRemoteStorage
+    const fileInfoFromRemoteStorage = activeFileInfoState.fileInfoFromRemoteStorage;
+    const viewType = getViewTypeFromFile(fileInfoFromRemoteStorage);
     let filecontentFromRemoteStorage: string;
+
+    if (viewType === ViewerType.GOOGLE_DRIVE_LINK || viewType === ViewerType.UNKNOWN) {
+      setActiveFileContentState(null);
+      setCurrentInfoFile({
+        fileInfoFromRemoteStorage,
+        viewType,
+        changeFileInView: true,
+        isFileUpdatedFromRemoteStorage: false,
+        isFileChangedLocaly: false,
+        isFileDownloadingFromRemoteStorage: false,
+      });
+
+      return;
+    }
+
+    if (viewType === ViewerType.PDF) {
+      setActiveFileContentState(null);
+      setCurrentInfoFile({
+        fileInfoFromRemoteStorage,
+        viewType,
+        changeFileInView: true,
+        isFileUpdatedFromRemoteStorage: false,
+        isFileChangedLocaly: false,
+        isFileDownloadingFromRemoteStorage: false,
+      });
+
+      return;
+    }
 
     setCurrentInfoFile({
       fileInfoFromRemoteStorage,
+      viewType,
       isFileUpdatedFromRemoteStorage: true,
       isFileChangedLocaly: false,
       isFileDownloadingFromRemoteStorage: true,

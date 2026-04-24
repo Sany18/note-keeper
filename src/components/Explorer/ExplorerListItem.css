@@ -29,6 +29,10 @@
     background-color: var(--bg-color-bright);
   }
 
+  &.selectedFile {
+    background-color: #2d3852;
+  }
+
   .ListItem__leftPart {
     gap: 0.25rem;
     flex: 1;

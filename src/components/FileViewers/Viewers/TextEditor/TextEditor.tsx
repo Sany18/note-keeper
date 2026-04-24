@@ -14,7 +14,7 @@ import { appEvents } from "state/events";
 type Props = {};
 
 const TextEditor: React.FC<Props> = () => {
-  const { saveLocallyDebounced, saveFileToGD } = useFileSaveService();
+  const { saveFileToGDDebounced, saveFileToGD } = useFileSaveService();
   const { activeFileInfo, setActiveFileInfo, activeFileContent } = useActiveFile();
 
   const editorContentRef = useRef(null);
@@ -24,7 +24,7 @@ const TextEditor: React.FC<Props> = () => {
   const content = () => editorContentRef.current.value;
 
   const onInputHandler = useCallback(() => {
-    saveLocallyDebounced(content());
+    saveFileToGDDebounced(content());
 
     const { isFileSavedToRemoteStorage, isFileSavedLocaly, isFileChangedLocaly } = activeFileInfo;
     if (isFileSavedToRemoteStorage || isFileSavedLocaly || !isFileChangedLocaly) {
@@ -34,7 +34,17 @@ const TextEditor: React.FC<Props> = () => {
         isFileChangedLocaly: true,
       });
     }
-  }, [activeFileInfo, setActiveFileInfo]);
+  }, [activeFileInfo, setActiveFileInfo, saveFileToGDDebounced]);
+
+  const persistCurrentContent = useCallback((saveToRemote?: boolean) => {
+    if (!editorContentRef.current || !activeFileInfo?.fileInfoFromRemoteStorage) return;
+
+    const currentContent = content();
+
+    if (saveToRemote && activeFileInfo?.isFileChangedLocaly) {
+      saveFileToGD(currentContent);
+    }
+  }, [activeFileInfo, saveFileToGD]);
 
   const onKeydown = useCallback((e: KeyboardEvent) => {
     const isCtrl = e.ctrlKey || e.metaKey;
@@ -115,6 +125,18 @@ const TextEditor: React.FC<Props> = () => {
   }, []);
 
   useEffect(() => {
+    const handleBeforeUnload = () => {
+      persistCurrentContent(true);
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
+  }, [persistCurrentContent]);
+
+  useEffect(() => {
     window.addEventListener('keydown', onKeydown);
 
     return () => {
@@ -126,7 +148,8 @@ const TextEditor: React.FC<Props> = () => {
     <div className={`TextEditor__wrapper ${currentUser?.loggedIn && !activeFileInfo?.isFileDownloadingFromRemoteStorage && "view"}`}>
       <textarea
         ref={editorContentRef}
-        onChange={onInputHandler}>
+        onChange={onInputHandler}
+        onBlur={() => persistCurrentContent()}>
       </textarea>
     </div>
   );

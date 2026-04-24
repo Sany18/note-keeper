@@ -9,6 +9,9 @@ export const defaultExplorerState = {
     [RemoteStorageProviders.LOCAL_MACHINE]: [],
   },
   activeFileModel: null as File, // In the viewer
+  selectedFileIds: [] as string[],
+  lastSelectedFileId: null as string,
+  selectionAnchorFileId: null as string,
 
   inProgress: false,
 

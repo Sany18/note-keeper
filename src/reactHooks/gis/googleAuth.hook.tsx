@@ -1,6 +1,6 @@
 import { createSingletonProvider } from "services/reactProvider/singletonProvider";
 import { LocalStorageKeys, useLocalStorage } from "reactHooks/localStorage/localStorage.hook";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getUserInfo } from "services/userInfo/userInfo.service";
 
 import { log } from "services/log/log.service";
@@ -19,6 +19,19 @@ const getUserDefaultState = (): UserState => ({
   scopes: [],
 });
 
+const tokenMaxAge = 55 * 60 * 1000; // 55 min safety window for 1h OAuth token
+const silentRefreshCooldownMs = 5000;
+const popupBlockedBackoffMs = 60000;
+
+const isTokenExpired = (receivedAt?: string): boolean => {
+  if (!receivedAt) return true;
+
+  const tokenIssuedAt = new Date(receivedAt).getTime();
+  if (Number.isNaN(tokenIssuedAt)) return true;
+
+  return (Date.now() - tokenIssuedAt) >= tokenMaxAge;
+};
+
 const _useGoogleAuth = () => {
   const setAllStates = useSetRecoilState(allStatesSelector);
   const [drawerState, setDraverState] = useRecoilState(leftDrawerSelector);
@@ -26,6 +39,12 @@ const _useGoogleAuth = () => {
   const { items, setItem, getItem, clearLocalStorage } = useLocalStorage();
 
   const googleSignInRef = useRef(null);
+  const silentRefreshRef = useRef({
+    inProgress: false,
+    lastAttemptAt: 0,
+    blockedUntil: 0,
+  });
+  const [googleAuthReady, setGoogleAuthReady] = useState(false);
 
   const currentUser = useMemo<Partial<UserState>>((): Partial<UserState> => {
     return getItem(LocalStorageKeys.CURRENT_USER) || getUserDefaultState();
@@ -33,6 +52,21 @@ const _useGoogleAuth = () => {
 
   useEffect(() => {
     const initTokenCallback = (googleAccessTokenToGD) => {
+      silentRefreshRef.current.inProgress = false;
+
+      if (googleAccessTokenToGD?.error) {
+        log.appEvent('GoogleAuth: Token request returned an error', googleAccessTokenToGD);
+
+        if (googleAccessTokenToGD.error === 'popup_failed_to_open') {
+          silentRefreshRef.current.blockedUntil = Date.now() + popupBlockedBackoffMs;
+        }
+
+        const storedUser = getItem(LocalStorageKeys.CURRENT_USER) || getUserDefaultState();
+        storedUser.loggedIn = false;
+        setItem(LocalStorageKeys.CURRENT_USER, storedUser);
+        return;
+      }
+
       const storedUser = getItem(LocalStorageKeys.CURRENT_USER) || getUserDefaultState();
       googleAccessTokenToGD.receivedAt = new Date().toISOString();
       storedUser.googleAccessTokenToGD = googleAccessTokenToGD;
@@ -55,6 +89,8 @@ const _useGoogleAuth = () => {
         include_granted_scopes: true,
         enable_granular_consent: true,
       });
+
+      setGoogleAuthReady(true);
     };
 
     const script = document.createElement('script');
@@ -64,8 +100,50 @@ const _useGoogleAuth = () => {
     document.body.appendChild(script);
   }, []);
 
+  const refreshAccessTokenSilently = useCallback(() => {
+    if (!googleSignInRef.current) return false;
+
+    const now = Date.now();
+
+    if (silentRefreshRef.current.inProgress) return false;
+    if (now < silentRefreshRef.current.blockedUntil) return false;
+    if (now - silentRefreshRef.current.lastAttemptAt < silentRefreshCooldownMs) return false;
+
+    silentRefreshRef.current.inProgress = true;
+    silentRefreshRef.current.lastAttemptAt = now;
+
+    googleSignInRef.current.requestAccessToken({ prompt: 'none' });
+    return true;
+  }, []);
+
+  // Refresh stale token on reload before issuing Drive calls
+  useEffect(() => {
+    if (!googleAuthReady || !currentUser.loggedIn) return;
+
+    const accessToken = currentUser.googleAccessTokenToGD?.access_token;
+    const receivedAt = currentUser.googleAccessTokenToGD?.receivedAt;
+    const stale = !accessToken || isTokenExpired(receivedAt);
+
+    if (!stale) return;
+
+    setItem(LocalStorageKeys.CURRENT_USER, {
+      ...currentUser,
+      loggedIn: false,
+    });
+
+    refreshAccessTokenSilently();
+  }, [
+    googleAuthReady,
+    currentUser.loggedIn,
+    currentUser.googleAccessTokenToGD?.access_token,
+    currentUser.googleAccessTokenToGD?.receivedAt,
+    refreshAccessTokenSilently,
+    setItem,
+  ]);
+
   useEffect(() => {
     if (!currentUser.googleAccessTokenToGD?.access_token) return;
+    if (isTokenExpired(currentUser.googleAccessTokenToGD?.receivedAt)) return;
 
     getUserInfo(currentUser.googleAccessTokenToGD.access_token)
       .then((userInfo) => {
@@ -92,6 +170,9 @@ const _useGoogleAuth = () => {
 
   const login = useCallback(() => {
     if (googleSignInRef.current) {
+      silentRefreshRef.current.blockedUntil = 0;
+      silentRefreshRef.current.inProgress = true;
+      silentRefreshRef.current.lastAttemptAt = Date.now();
       googleSignInRef.current.requestAccessToken({ prompt: 'select_account' });
     }
   }, []);
@@ -112,6 +193,7 @@ const _useGoogleAuth = () => {
     login,
     logout,
     requestAdditionalScopes,
+    refreshAccessTokenSilently,
   }
 }
 
