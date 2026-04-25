@@ -77,7 +77,6 @@ const _useGoogleAuth = () => {
 
       setItem(LocalStorageKeys.CURRENT_USER, storedUser);
       log.appEvent('GoogleAuth: Access token received', storedUser);
-      document.dispatchEvent(new Event('loadFilesFromGoogleDrive'));
     };
 
     const initGoogleAuth = () => {

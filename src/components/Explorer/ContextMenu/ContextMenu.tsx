@@ -428,10 +428,10 @@ export const ContextMenu: FC<Props> = memo(({ contextEvent }) => {
       {fileFromList && !isNotDraggableElement &&
         <>
           <div
-            title="Rename (F2)"
+            title="Rename [F2]"
             onClick={renameClickHandler}
             className="ContextMenu__item item">
-            Rename
+            Rename [F2]
             <Icon>edit</Icon>
           </div>
 

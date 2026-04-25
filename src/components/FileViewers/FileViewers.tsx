@@ -2,7 +2,7 @@ import { useGapi } from "reactHooks/gapi/useGapi.hook";
 import { useExplorer } from "reactHooks/fileManager/explorer/explorer.hook";
 import { useGoogleAuth } from "reactHooks/gis/googleAuth.hook";
 import { useActiveFile } from "reactHooks/fileManager/activeFile/activeFile.hook";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 
 import { log } from "services/log/log.service";
 import { ctrlBtnName } from "services/clientDevice/getPlatform";
@@ -70,6 +70,8 @@ export const FileViewer: React.FC<Props> = () => {
     getGDFileRevisionContent,
   } = useGapi();
 
+  const historyPanelRef = useRef<HTMLDivElement>(null);
+
   const [message, setMessage] = useState<EditorMessageType | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -108,6 +110,19 @@ export const FileViewer: React.FC<Props> = () => {
       timeStyle: 'short',
     });
   }
+
+  useEffect(() => {
+    if (!historyOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (historyPanelRef.current && !historyPanelRef.current.contains(e.target as Node)) {
+        setHistoryOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [historyOpen]);
 
   const resetHistoryState = () => {
     setHistoryOpen(false);
@@ -464,7 +479,7 @@ export const FileViewer: React.FC<Props> = () => {
           </div>
 
           {historyOpen &&
-            <div className="FileViewer__historyPanel">
+            <div className="FileViewer__historyPanel" ref={historyPanelRef}>
               <div className="FileViewer__historyHeader">
                 <b>Version History</b>
                 {!fileRevisions.length && !historyLoading && <span>No revision history found</span>}

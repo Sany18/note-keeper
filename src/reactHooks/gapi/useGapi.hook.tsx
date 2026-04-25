@@ -98,11 +98,12 @@ export const _useGapi = () => {
     }
   }, [gapiInitialized, gapiCallbacks]);
 
-  // Forward GIS access token to gapi client (replaces auth2 token management)
+  // Forward GIS access token to gapi client, then trigger Drive file load
   useEffect(() => {
     const token = currentUser.googleAccessTokenToGD?.access_token;
     if (gapiInitialized && token) {
       window.gapi.client.setToken({ access_token: token });
+      document.dispatchEvent(new Event('loadFilesFromGoogleDrive'));
     }
   }, [gapiInitialized, currentUser.googleAccessTokenToGD?.access_token]);
 
