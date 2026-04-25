@@ -46,12 +46,12 @@ const TextEditor: React.FC<Props> = () => {
     }
   }, [activeFileInfo, saveFileToGD]);
 
-  useHotkey('viewer', `ctrl+${keyCodes.s}`, (e) => { e.preventDefault(); saveFileToGD(content()); });
-  useHotkey('viewer', keyCodes.tab, (e) => handleTabInsertion(e, editorContentRef.current));
-  useHotkey('viewer', `ctrl+${keyCodes.bracketLeft}`, (e) => handleIndentation(e, editorContentRef.current, true));
-  useHotkey('viewer', `ctrl+${keyCodes.bracketRight}`, (e) => handleIndentation(e, editorContentRef.current));
-  useHotkey('viewer', `ctrl+shift+${keyCodes.enter}`, (e) => handleNewLine(e, editorContentRef.current, true));
-  useHotkey('viewer', `ctrl+${keyCodes.enter}`, (e) => handleNewLine(e, editorContentRef.current));
+  useHotkey('viewer', `ctrl+${keyCodes.s}`, (e) => { e.preventDefault(); saveFileToGD(content()); }, 'Save file');
+  useHotkey('viewer', keyCodes.tab, (e) => handleTabInsertion(e, editorContentRef.current), 'Insert tab');
+  useHotkey('viewer', `ctrl+${keyCodes.bracketLeft}`, (e) => handleIndentation(e, editorContentRef.current, true), 'Decrease indent');
+  useHotkey('viewer', `ctrl+${keyCodes.bracketRight}`, (e) => handleIndentation(e, editorContentRef.current), 'Increase indent');
+  useHotkey('viewer', `ctrl+shift+${keyCodes.enter}`, (e) => handleNewLine(e, editorContentRef.current, true), 'New line above');
+  useHotkey('viewer', `ctrl+${keyCodes.enter}`, (e) => handleNewLine(e, editorContentRef.current), 'New line below');
 
   // Update only if user opens file from explorer
   useEffect(() => {

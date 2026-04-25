@@ -1,0 +1,67 @@
+.HotkeyHelp {
+  position: relative;
+}
+
+.HotkeyHelp__trigger {
+  padding: 0 0.5rem;
+  font-size: 0.9rem;
+  aspect-ratio: unset !important;
+}
+
+.HotkeyHelp__panel {
+  top: calc(100% + 0.25rem);
+  right: 0;
+  z-index: var(--z-dropdown);
+  width: 22rem;
+  padding: 0.5rem 0;
+  position: absolute;
+  background: var(--bg-color-light);
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--bg-color-bright);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.HotkeyHelp__group {
+  padding: 0.25rem 0;
+
+  & + .HotkeyHelp__group {
+    border-top: 1px solid var(--bg-color-bright);
+    margin-top: 0.25rem;
+    padding-top: 0.5rem;
+  }
+}
+
+.HotkeyHelp__zone-title {
+  color: var(--comment-color);
+  font-size: 0.7rem;
+  padding: 0.1rem 0.75rem 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.HotkeyHelp__row {
+  gap: 0.75rem;
+  display: flex;
+  padding: 0.2rem 0.75rem;
+  align-items: center;
+}
+
+.HotkeyHelp__combo {
+  color: var(--blue-color-light);
+  padding: 0.1rem 0.35rem;
+  min-width: 5rem;
+  font-size: 0.75rem;
+  background: var(--bg-color);
+  border-radius: 0.2rem;
+  font-family: monospace;
+  white-space: nowrap;
+  text-align: center;
+  border: 1px solid var(--bg-color-bright);
+}
+
+.HotkeyHelp__label {
+  color: var(--white-color);
+  font-size: 0.825rem;
+}

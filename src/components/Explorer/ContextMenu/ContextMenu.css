@@ -24,7 +24,7 @@
 
 .ContextMenu__submenu_createMore {
   position: absolute;
-  z-index: 2;
+  z-index: var(--z-dropdown);
 }
 
 .hide {

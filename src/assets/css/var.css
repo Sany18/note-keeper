@@ -31,6 +31,13 @@
 
   --scrollbar-width: 0.5rem;
 
+  /* Z-index layers */
+  --z-behind: -1;    /* Decorative backgrounds behind content */
+  --z-content: 1;    /* Slightly elevated in-flow elements (resize handles, decorative layers) */
+  --z-zone-border: 10;  /* Active zone focus border overlay */
+  --z-dropdown: 100; /* Floating panels: context menus, dropdowns, popups */
+  --z-modal: 200;    /* Full-screen overlays, modals */
+
   /* Breakpoints */
   --breakpoint-sm: 576px;
   --breakpoint-md: 768px;

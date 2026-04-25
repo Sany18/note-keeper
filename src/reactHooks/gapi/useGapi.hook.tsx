@@ -2,10 +2,10 @@ import { useExplorer } from "reactHooks/fileManager/explorer/explorer.hook";
 import { useActiveFile } from "reactHooks/fileManager/activeFile/activeFile.hook";
 import { useGoogleAuth } from "reactHooks/gis/googleAuth.hook";
 import { createSingletonProvider } from "services/reactProvider/singletonProvider";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { log } from "services/log/log.service";
-import { appendChildToFolder, getQniqueFilesAndUpdateOld, getRootId, updateTreeElement } from "services/tree/treeHelpers";
+import { appendChildToFolder, findElementInTree, getQniqueFilesAndUpdateOld, getRootId, updateTreeElement } from "services/tree/treeHelpers";
 
 import { appSelector } from "state/localState/appState";
 import { useRecoilState } from "recoil";
@@ -47,6 +47,9 @@ export const _useGapi = () => {
   const { handleError } = useGapiErrorHandler();
   const { currentUser } = useGoogleAuth();
   const { fileTree, explorerState, setTree, setExplorerInProgress, setExplorerState } = useExplorer();
+
+  const fileTreeRef = useRef(fileTree);
+  useEffect(() => { fileTreeRef.current = fileTree; }, [fileTree]);
   const { setActiveFileInfo } = useActiveFile();
 
   const rootId = useMemo(() => getRootId(fileTree), [fileTree?.length]);
@@ -157,24 +160,31 @@ export const _useGapi = () => {
   const fetchChildrenList = useCallback(async (fileFromList: File) => {
     try {
       const currentFileChildrenList = await getGDList(getChildrenParams(fileFromList.id));
-      const newThree = updateTreeElement(
-        fileTree,
+
+      // Read latest tree via ref — avoids stale closure and respects folder state changes during fetch
+      const latestTree = fileTreeRef.current;
+      const currentFile = findElementInTree(latestTree, fileFromList.id);
+
+      // Discard result if user closed the folder while it was loading
+      if (!currentFile?.folderOpen) return;
+
+      const newTree = updateTreeElement(
+        latestTree,
         fileFromList.id,
         {
           ...fileFromList,
           children: getQniqueFilesAndUpdateOld(fileFromList.children || [], currentFileChildrenList),
-          folderOpen: true
+          folderOpen: true,
         }
       );
 
-      setTree(newThree);
-
-      return newThree;
+      setTree(newTree);
+      return newTree;
     } catch (error) {
       log.error('App: Error getting children list', error);
       setExplorerState({ error });
     }
-  }, [explorerState, fileTree, setExplorerState]);
+  }, [getGDList, setTree, setExplorerState]);
 
   const _GDStorageQuota = useMemo(() => {
     const { usagePercent, limitStr, usageStr } = appState.storageQuota;

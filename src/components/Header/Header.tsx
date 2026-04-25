@@ -9,6 +9,7 @@ import { leftDrawerSelector } from "state/localState/leftDrawerState";
 import { Img } from "components/Atoms/Img/Img";
 import { Icon } from "components/Atoms/Icon/Icon";
 import { Menu } from "./Menu/Menu";
+import { HotkeyHelp } from "./HotkeyHelp/HotkeyHelp";
 
 import "./Header.css";
 import { activeFileInfoSelector } from "state/localState/activeFile/activeFileInfoState";
@@ -74,6 +75,8 @@ export const Header: React.FC<Props> = ({ simpleView, hideEditorName }) => {
             <Icon size="1.25rem">favorite</Icon>
             Donate
           </a>
+
+          {loggedIn && <HotkeyHelp />}
 
           {loggedIn
             ? <Menu />

@@ -9,7 +9,8 @@ import { defaultActiveFileInfoState } from "state/localState/activeFile/activeFi
 import { File } from "dtos/file.model";
 import { ViewerType } from "components/FileViewers/FileViewers.types";
 
-type Props = {};
+// Shared across all hook instances — only the most recent load applies its result
+let activeLoadId = 0;
 
 export const useFileViewerService = () => {
   const { setActiveFileInfo, setActiveFileContent } = useActiveFile();
@@ -18,12 +19,9 @@ export const useFileViewerService = () => {
 
   const { getFile } = useGapi();
 
-  ///////////////////////////////
-  // Intrerupting file downloading
-  // If file don't need to be downloaded
-  // or has another way to be viewed
-  ///////////////////////////////
   const loadFileFromRS = async (fileInfo: File) => {
+    const loadId = ++activeLoadId;
+
     const viewType = getViewTypeFromFile(fileInfo);
     const defaultState = {
       ...defaultActiveFileInfoState,
@@ -53,9 +51,6 @@ export const useFileViewerService = () => {
       return;
     }
 
-    //////////////////////////////
-    // Actual file downloading
-    //////////////////////////////
     setInProgress(true);
 
     setActiveFileInfo({
@@ -67,21 +62,26 @@ export const useFileViewerService = () => {
     try {
       const GDFile: string = await getFile(fileInfo);
 
+      if (loadId !== activeLoadId) {
+        setInProgress(false);
+        return;
+      }
+
       setActiveFileContent(GDFile);
       setActiveFileInfo({
         changeFileInView: true,
         isFileDownloadingFromRemoteStorage: false,
       });
-
-      setInProgress(false);
     } catch (error) {
-      setActiveFileInfo({
-        ...defaultState,
-        error,
-        fileInfoFromRemoteStorage: fileInfo,
-        isFileDownloadingFromRemoteStorage: false,
-      });
-
+      if (loadId === activeLoadId) {
+        setActiveFileInfo({
+          ...defaultState,
+          error,
+          fileInfoFromRemoteStorage: fileInfo,
+          isFileDownloadingFromRemoteStorage: false,
+        });
+      }
+    } finally {
       setInProgress(false);
     }
   };

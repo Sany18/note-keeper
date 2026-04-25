@@ -1,8 +1,10 @@
-export type HotkeyZone = 'explorer' | 'viewer';
+export type HotkeyZone = 'global' | 'explorer' | 'viewer';
+export type HotkeyRecord = { zone: HotkeyZone; combo: string; label: string };
 type HotkeyHandler = (e: KeyboardEvent) => void;
 type ZoneChangeListener = (zone: HotkeyZone | null) => void;
+type HotkeyEntry = { handler: HotkeyHandler; label?: string };
 
-const zoneHandlers = new Map<HotkeyZone, Map<string, HotkeyHandler>>();
+const zoneHandlers = new Map<HotkeyZone, Map<string, HotkeyEntry>>();
 const listeners = new Set<ZoneChangeListener>();
 let activeZone: HotkeyZone | null = null;
 
@@ -16,16 +18,15 @@ const buildCombo = (e: KeyboardEvent): string => {
 };
 
 window.addEventListener('keydown', (e: KeyboardEvent) => {
-  if (!activeZone) return;
-  const handlers = zoneHandlers.get(activeZone);
-  if (!handlers) return;
-  handlers.get(buildCombo(e))?.(e);
+  const combo = buildCombo(e);
+  zoneHandlers.get('global')?.get(combo)?.handler(e);
+  if (activeZone) zoneHandlers.get(activeZone)?.get(combo)?.handler(e);
 });
 
 export const hotkeyService = {
-  register(zone: HotkeyZone, combo: string, handler: HotkeyHandler): () => void {
+  register(zone: HotkeyZone, combo: string, handler: HotkeyHandler, label?: string): () => void {
     if (!zoneHandlers.has(zone)) zoneHandlers.set(zone, new Map());
-    zoneHandlers.get(zone)!.set(combo, handler);
+    zoneHandlers.get(zone)!.set(combo, { handler, label });
     return () => zoneHandlers.get(zone)?.delete(combo);
   },
 
@@ -38,5 +39,23 @@ export const hotkeyService = {
   onZoneChange(listener: ZoneChangeListener): () => void {
     listeners.add(listener);
     return () => listeners.delete(listener);
+  },
+
+  getActiveZone(): HotkeyZone | null {
+    return activeZone;
+  },
+
+  getAll(): HotkeyRecord[] {
+    const result: HotkeyRecord[] = [];
+    const zoneOrder: HotkeyZone[] = ['global', 'explorer', 'viewer'];
+
+    for (const zone of zoneOrder) {
+      const entries = zoneHandlers.get(zone);
+      if (!entries) continue;
+      for (const [combo, { label }] of entries) {
+        if (label) result.push({ zone, combo, label });
+      }
+    }
+    return result;
   },
 };

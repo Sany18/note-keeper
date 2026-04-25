@@ -78,7 +78,7 @@ input {
 }
 
 .buttonGroup {
-  z-index: 1;
+  z-index: var(--z-content);
   display: flex;
   border-radius: 0.25rem;
   flex-direction: column;
@@ -102,7 +102,7 @@ input {
 }
 
 .contextMenu {
-  z-index: 1;
+  z-index: var(--z-dropdown);
   display: flex;
   overflow: hidden;
   position: absolute;

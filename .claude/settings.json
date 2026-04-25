@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(grep -E \"\\\\.\\(tsx?|ts\\)$\")",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(pnpm build *)",
+      "Bash(npm run *)",
+      "Bash(sort -t: -k3 -n)",
+      "Bash(sed -n '100,115p' /Users/alex/allProjs/note-keeper/src/components/FileViewers/FileViewers.css)",
+      "Bash(sed -n '170,185p' /Users/alex/allProjs/note-keeper/src/components/FileViewers/FileViewers.css)",
+      "Bash(sed -n '1,20p' /Users/alex/allProjs/note-keeper/src/components/WelcomePage/WelcomePage.css)",
+      "Bash(sed -n '30,45p' /Users/alex/allProjs/note-keeper/src/pages/NotFound404/NotFound404.css)"
     ]
   }
 }

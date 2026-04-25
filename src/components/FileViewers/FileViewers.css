@@ -102,7 +102,7 @@
   display: flex;
   gap: 0.6rem;
   padding: 0.7rem;
-  z-index: 2;
+  z-index: var(--z-dropdown);
   position: absolute;
   border-radius: 0.6rem;
   flex-direction: column;
@@ -174,7 +174,7 @@
     right: 0.35rem;
     bottom: 0.35rem;
     width: auto;
-    z-index: 20;
+    z-index: var(--z-dropdown);
     position: fixed;
     max-height: 55vh;
     overflow-y: auto;

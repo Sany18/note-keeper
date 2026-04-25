@@ -10,7 +10,7 @@
   cursor: pointer;
   display: flex;
   padding: 1rem 3rem;
-  z-index: 1;
+  z-index: var(--z-content);
   position: absolute;
   transition: 0.5s;
   background: rgba(0, 0, 0, 0.5);
@@ -34,7 +34,7 @@
 
 .NotFound404__title_float {
   color: black;
-  z-index: 1;
+  z-index: var(--z-content);
   position: absolute;
   font-size: 5rem;
   animation: floatTitle 8s infinite;
@@ -50,7 +50,7 @@
     color: transparent;
     width: 15rem;
     height: 15rem;
-    z-index: -1;
+    z-index: var(--z-behind);
     content: 'Not found';
     position: absolute;
     transform: translate(-22%, -28%);

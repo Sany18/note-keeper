@@ -134,10 +134,10 @@ const ImageViewer: React.FC<Props> = () => {
     }
   }
 
-  useHotkey('viewer', keyCodes.ArrowLeft, (e) => { e.preventDefault(); loadPrevImage(); });
-  useHotkey('viewer', keyCodes.ArrowRight, (e) => { e.preventDefault(); loadNextImage(); });
-  useHotkey('viewer', keyCodes.ArrowUp, (e) => { e.preventDefault(); scaleImage(+1); });
-  useHotkey('viewer', keyCodes.ArrowDown, (e) => { e.preventDefault(); scaleImage(-1); });
+  useHotkey('viewer', keyCodes.ArrowLeft, (e) => { e.preventDefault(); loadPrevImage(); }, 'Previous image');
+  useHotkey('viewer', keyCodes.ArrowRight, (e) => { e.preventDefault(); loadNextImage(); }, 'Next image');
+  useHotkey('viewer', keyCodes.ArrowUp, (e) => { e.preventDefault(); scaleImage(+1); }, 'Zoom in');
+  useHotkey('viewer', keyCodes.ArrowDown, (e) => { e.preventDefault(); scaleImage(-1); }, 'Zoom out');
 
   const centerImageElement = () => {
     getImageElement().scrollIntoView({ block: 'center', inline: 'center' });

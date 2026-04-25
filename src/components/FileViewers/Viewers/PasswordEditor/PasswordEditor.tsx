@@ -80,7 +80,7 @@ const PasswordEditor: React.FC<Props> = () => {
     onFileUpdateHandler();
   }, [parsedPasswords, onFileUpdateHandler]);
 
-  useHotkey('viewer', `ctrl+${keyCodes.s}`, (e) => { e.preventDefault(); saveFileToGD(content()); });
+  useHotkey('viewer', `ctrl+${keyCodes.s}`, (e) => { e.preventDefault(); saveFileToGD(content()); }, 'Save file');
 
   // Update only if user opens file from explorer
   useEffect(() => {

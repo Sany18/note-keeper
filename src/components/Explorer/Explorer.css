@@ -45,7 +45,7 @@
   bottom: 0;
   cursor: ew-resize;
   height: calc(100% - 2.5rem);
-  z-index: 1;
+  z-index: var(--z-content);
   position: absolute;
   transition: 0.3s left;
   margin-left: -1px;

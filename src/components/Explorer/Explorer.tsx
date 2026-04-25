@@ -10,6 +10,8 @@ import { useRecoilState } from 'recoil';
 import { log } from 'services/log/log.service';
 import { useHotkey } from 'services/keyboardEvents/useHotkey';
 import { useHotkeyZone } from 'services/keyboardEvents/useHotkeyZone';
+import { useFileViewerService } from 'services/FileViewer/fileViewer.service';
+import { appEvents } from 'state/events';
 import { isTouchDevice } from 'services/clientDevice/getPlatform';
 import { getDOMParrentElement } from 'services/DOM/getParentElementByClassName';
 import { getClosestParentFolder } from 'services/tree/treeHelpers';
@@ -115,12 +117,13 @@ export const Explorer: React.FC<Props> = () => {
   const [filesState, setFilesState] = useRecoilState(explorerSelector);
   const [drawerState, setDrawerState] = useRecoilState(leftDrawerSelector);
 
-  const { activeFileModel, setActiveFileModel, setActiveFileInfo } = useActiveFile();
+  const { activeFileInfo, activeFileModel, setActiveFileModel, setActiveFileInfo } = useActiveFile();
   const { isExplorerInProgress, fileTree, rootFolderId, updateFileInTree, getFileFromTreeById, toggleFolderInTree } = useExplorer();
 
   const { renameGDFile, changeFileParent, fetchRootFilesList, fetchChildrenList } = useGapi();
   const { requestAdditionalScopes, currentUser } = useGoogleAuth();
   const { inProgress: fileUploadingInProgress, openUploadDialog, uploadFiles } = useUploadFiles();
+  const { loadFileFromRS } = useFileViewerService();
 
   const [contextMenuEvent, setContextMenuEvent] = useState<any>(false);
 
@@ -255,9 +258,9 @@ export const Explorer: React.FC<Props> = () => {
 
   const explorerZone = useHotkeyZone('explorer');
 
-  useHotkey('explorer', 'F2', (e) => { e.preventDefault(); renameActiveFile(); });
-  useHotkey('explorer', 'ctrl+KeyB', (e) => { e.preventDefault(); toggleDrawer(); });
-  useHotkey('explorer', 'Escape', (e) => { if (selectedFilesCount > 0) { e.preventDefault(); clearSelection(); } });
+  useHotkey('explorer', 'F2', (e) => { e.preventDefault(); renameActiveFile(); }, 'Rename file');
+  useHotkey('global', 'ctrl+KeyB', (e) => { e.preventDefault(); toggleDrawer(); }, 'Toggle sidebar');
+  useHotkey('explorer', 'Escape', (e) => { if (selectedFilesCount > 0) { e.preventDefault(); clearSelection(); } }, 'Clear selection');
   useHotkey('explorer', 'shift+ArrowDown', (e) => {
     const visibleFileIds = getVisibleFileIds();
     if (!visibleFileIds.length) return;
@@ -283,7 +286,7 @@ export const Explorer: React.FC<Props> = () => {
       : [nextIndex, safeAnchorIndex];
 
     setFilesState({ selectedFileIds: visibleFileIds.slice(from, to + 1), lastSelectedFileId: nextId, selectionAnchorFileId: visibleFileIds[safeAnchorIndex] });
-  });
+  }, 'Extend selection down');
   useHotkey('explorer', 'shift+ArrowUp', (e) => {
     const visibleFileIds = getVisibleFileIds();
     if (!visibleFileIds.length) return;
@@ -309,7 +312,7 @@ export const Explorer: React.FC<Props> = () => {
       : [nextIndex, safeAnchorIndex];
 
     setFilesState({ selectedFileIds: visibleFileIds.slice(from, to + 1), lastSelectedFileId: nextId, selectionAnchorFileId: visibleFileIds[safeAnchorIndex] });
-  });
+  }, 'Extend selection up');
 
   const selectSingleFile = useCallback((id: string) => {
     setFilesState({ selectedFileIds: [id], lastSelectedFileId: id, selectionAnchorFileId: id });
@@ -321,23 +324,23 @@ export const Explorer: React.FC<Props> = () => {
     e.preventDefault();
     const ids = getVisibleFileIds();
     if (!ids.length) return;
-    const cur = filesState.lastSelectedFileId || filesState.selectedFileIds?.[0];
+    const cur = filesState.lastSelectedFileId || filesState.selectedFileIds?.[0] || activeFileInfo?.fileInfoFromRemoteStorage?.id;
     const idx = cur ? ids.indexOf(cur) : -1;
     selectSingleFile(ids[Math.min(idx + 1, ids.length - 1)]);
-  });
+  }, 'Navigate down');
 
   useHotkey('explorer', 'ArrowUp', (e) => {
     e.preventDefault();
     const ids = getVisibleFileIds();
     if (!ids.length) return;
-    const cur = filesState.lastSelectedFileId || filesState.selectedFileIds?.[0];
+    const cur = filesState.lastSelectedFileId || filesState.selectedFileIds?.[0] || activeFileInfo?.fileInfoFromRemoteStorage?.id;
     const idx = cur ? ids.indexOf(cur) : ids.length;
     selectSingleFile(ids[Math.max(idx - 1, 0)]);
-  });
+  }, 'Navigate up');
 
   useHotkey('explorer', 'ArrowRight', (e) => {
     e.preventDefault();
-    const cur = filesState.lastSelectedFileId || filesState.selectedFileIds?.[0];
+    const cur = filesState.lastSelectedFileId || filesState.selectedFileIds?.[0] || activeFileInfo?.fileInfoFromRemoteStorage?.id;
     if (!cur) return;
     const file = getFileFromTreeById(cur);
     if (!file?.isFolder) return;
@@ -349,11 +352,11 @@ export const Explorer: React.FC<Props> = () => {
       const idx = ids.indexOf(cur);
       if (idx >= 0 && idx < ids.length - 1) selectSingleFile(ids[idx + 1]);
     }
-  });
+  }, 'Expand folder');
 
   useHotkey('explorer', 'ArrowLeft', (e) => {
     e.preventDefault();
-    const cur = filesState.lastSelectedFileId || filesState.selectedFileIds?.[0];
+    const cur = filesState.lastSelectedFileId || filesState.selectedFileIds?.[0] || activeFileInfo?.fileInfoFromRemoteStorage?.id;
     if (!cur) return;
     const file = getFileFromTreeById(cur);
     if (!file) return;
@@ -363,7 +366,24 @@ export const Explorer: React.FC<Props> = () => {
       const parent = getFileFromTreeById(file.parents?.[0]);
       if (parent) selectSingleFile(parent.id);
     }
-  });
+  }, 'Collapse folder / go to parent');
+
+  useHotkey('explorer', 'Enter', (e) => {
+    e.preventDefault();
+    const cur = filesState.lastSelectedFileId || filesState.selectedFileIds?.[0];
+    if (!cur) return;
+    const file = getFileFromTreeById(cur);
+    if (!file) return;
+    if (file.isFolder) {
+      const opening = !file.folderOpen;
+      toggleFolderInTree(file, opening);
+      if (opening) fetchChildrenList(file);
+    } else {
+      if (!activeFileInfo?.isFileSavedToRemoteStorage) appEvents.onSaveToGoogleDrive.emit();
+      loadFileFromRS(file);
+      setActiveFileModel(file);
+    }
+  }, 'Open file / toggle folder');
 
   // Move file on drag and drop
   useEffect(() => {

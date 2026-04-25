@@ -5,7 +5,9 @@ import { useActiveFile } from "reactHooks/fileManager/activeFile/activeFile.hook
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 
 import { log } from "services/log/log.service";
+import { useHotkey } from "services/keyboardEvents/useHotkey";
 import { useHotkeyZone } from "services/keyboardEvents/useHotkeyZone";
+import { hotkeyService } from "services/keyboardEvents/hotkeyService";
 import { ctrlBtnName } from "services/clientDevice/getPlatform";
 import { appendChildToFolder } from "services/tree/treeHelpers";
 import { useFileViewerService } from "services/FileViewer/fileViewer.service";
@@ -73,6 +75,7 @@ export const FileViewer: React.FC<Props> = () => {
 
   const historyPanelRef = useRef<HTMLDivElement>(null);
   const viewerZone = useHotkeyZone('viewer');
+  useHotkey('viewer', 'Escape', (e) => { e.preventDefault(); hotkeyService.activateZone('explorer'); }, 'Focus explorer');
 
   const [message, setMessage] = useState<EditorMessageType | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
