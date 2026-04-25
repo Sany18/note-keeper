@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { log } from "services/log/log.service";
 import { useFileViewerService } from "services/FileViewer/fileViewer.service";
+import { useHotkey } from "services/keyboardEvents/useHotkey";
 
 import { useRecoilState } from "recoil";
 import { leftDrawerSelector } from "state/localState/leftDrawerState";
@@ -109,40 +110,6 @@ const ImageViewer: React.FC<Props> = () => {
     setCurrentScaleFactor(nextScaleFactor);
   }, [defaultScale]);
 
-  const onKeydown = useCallback((e: KeyboardEvent) => {
-    if (e.code === keyCodes.ArrowLeft) {
-      e.preventDefault();
-      loadPrevImage();
-      return;
-    }
-
-    if (e.code === keyCodes.ArrowRight) {
-      e.preventDefault();
-      loadNextImage();
-      return;
-    }
-
-    if (e.code === keyCodes.ArrowUp) {
-      e.preventDefault();
-      scaleImage(+1);
-      return;
-    }
-
-    if (e.code === keyCodes.ArrowDown) {
-      e.preventDefault();
-      scaleImage(-1);
-      return;
-    }
-  }, [scaleImage]);
-
-  useEffect(() => {
-    window.addEventListener('keydown', onKeydown);
-
-    return () => {
-      window.removeEventListener('keydown', onKeydown);
-    }
-  }, [onKeydown]);
-
   const loadNextImage = () => {
     const allFiles = getNeighborFileList(activeFileInfo.fileInfoFromRemoteStorage);
     const currentFileIndex = allFiles.findIndex(e => e.id === activeFileInfo.fileInfoFromRemoteStorage.id);
@@ -166,6 +133,11 @@ const ImageViewer: React.FC<Props> = () => {
       }
     }
   }
+
+  useHotkey('viewer', keyCodes.ArrowLeft, (e) => { e.preventDefault(); loadPrevImage(); });
+  useHotkey('viewer', keyCodes.ArrowRight, (e) => { e.preventDefault(); loadNextImage(); });
+  useHotkey('viewer', keyCodes.ArrowUp, (e) => { e.preventDefault(); scaleImage(+1); });
+  useHotkey('viewer', keyCodes.ArrowDown, (e) => { e.preventDefault(); scaleImage(-1); });
 
   const centerImageElement = () => {
     getImageElement().scrollIntoView({ block: 'center', inline: 'center' });

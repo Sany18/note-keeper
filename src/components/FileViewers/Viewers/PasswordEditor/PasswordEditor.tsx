@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { log } from "services/log/log.service";
 import { keyCodes } from "services/keyboardEvents/keyCodes.const";
+import { useHotkey } from "services/keyboardEvents/useHotkey";
 
 import "./PasswordEditor.css";
 import { appEvents } from "state/events";
@@ -79,16 +80,7 @@ const PasswordEditor: React.FC<Props> = () => {
     onFileUpdateHandler();
   }, [parsedPasswords, onFileUpdateHandler]);
 
-  const onKeydown = useCallback((e: KeyboardEvent) => {
-    const isCtrl = e.ctrlKey || e.metaKey;
-
-    // Ctrl + S | Save document
-    if (isCtrl && e.code === keyCodes.s) {
-      e.preventDefault();
-      saveFileToGD(content());
-      return;
-    }
-  }, [saveFileToGD, content]);
+  useHotkey('viewer', `ctrl+${keyCodes.s}`, (e) => { e.preventDefault(); saveFileToGD(content()); });
 
   // Update only if user opens file from explorer
   useEffect(() => {
@@ -114,14 +106,6 @@ const PasswordEditor: React.FC<Props> = () => {
       appEvents.onSaveToGoogleDrive.off(onSave);
     }
   }, [activeFileInfo, saveFileToGD, content]);
-
-  useEffect(() => {
-    window.addEventListener('keydown', onKeydown);
-
-    return () => {
-      window.removeEventListener('keydown', onKeydown);
-    }
-  }, [onKeydown]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);

@@ -5,6 +5,7 @@ import { useActiveFile } from "reactHooks/fileManager/activeFile/activeFile.hook
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 
 import { log } from "services/log/log.service";
+import { useHotkeyZone } from "services/keyboardEvents/useHotkeyZone";
 import { ctrlBtnName } from "services/clientDevice/getPlatform";
 import { appendChildToFolder } from "services/tree/treeHelpers";
 import { useFileViewerService } from "services/FileViewer/fileViewer.service";
@@ -71,6 +72,7 @@ export const FileViewer: React.FC<Props> = () => {
   } = useGapi();
 
   const historyPanelRef = useRef<HTMLDivElement>(null);
+  const viewerZone = useHotkeyZone('viewer');
 
   const [message, setMessage] = useState<EditorMessageType | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -420,8 +422,8 @@ export const FileViewer: React.FC<Props> = () => {
 
   return (
     <div
-      className="FileViewer__container"
-      onClick={deselectExplorerFiles}>
+      className={`FileViewer__container${viewerZone.isActive ? ' zone--active' : ''}`}
+      onClick={() => { viewerZone.activate(); deselectExplorerFiles(); }}>
       <div className="FileViewer__topBar">
         {message &&
           <div className={`FileViewer__message ${message.type}`}>

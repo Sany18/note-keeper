@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef } from "react";
 
 import { log } from "services/log/log.service";
 import { keyCodes } from "services/keyboardEvents/keyCodes.const";
+import { useHotkey } from "services/keyboardEvents/useHotkey";
 
 import { handleIndentation, handleNewLine, handleTabInsertion } from "../HotkeysHandlers.service";
 
@@ -45,46 +46,12 @@ const TextEditor: React.FC<Props> = () => {
     }
   }, [activeFileInfo, saveFileToGD]);
 
-  const onKeydown = useCallback((e: KeyboardEvent) => {
-    const isCtrl = e.ctrlKey || e.metaKey;
-
-    // Ctrl + S | Save document
-    if (isCtrl && e.code === keyCodes.s) {
-      e.preventDefault();
-      saveFileToGD(content());
-      return;
-    }
-
-    // Tab | Insert tabulation
-    if (e.code === keyCodes.tab) {
-      handleTabInsertion(e, editorContentRef.current);
-      return;
-    }
-
-    // Ctrl + [ | Move line 1 tab left
-    if (isCtrl && e.code === keyCodes.bracketLeft) {
-      handleIndentation(e, editorContentRef.current, true);
-      return;
-    }
-
-    // Ctrl + ] | Move line 1 tab right
-    if (isCtrl && e.code === keyCodes.bracketRight) {
-      handleIndentation(e, editorContentRef.current);
-      return;
-    }
-
-    // Ctrl + Shift + Enter | Add new line above the current
-    if (isCtrl && e.shiftKey && e.code === keyCodes.enter) {
-      handleNewLine(e, editorContentRef.current, true);
-      return;
-    }
-
-    // Ctrl + Enter | Add new line under the current
-    if (isCtrl && e.code === keyCodes.enter) {
-      handleNewLine(e, editorContentRef.current);
-      return;
-    }
-  }, []);
+  useHotkey('viewer', `ctrl+${keyCodes.s}`, (e) => { e.preventDefault(); saveFileToGD(content()); });
+  useHotkey('viewer', keyCodes.tab, (e) => handleTabInsertion(e, editorContentRef.current));
+  useHotkey('viewer', `ctrl+${keyCodes.bracketLeft}`, (e) => handleIndentation(e, editorContentRef.current, true));
+  useHotkey('viewer', `ctrl+${keyCodes.bracketRight}`, (e) => handleIndentation(e, editorContentRef.current));
+  useHotkey('viewer', `ctrl+shift+${keyCodes.enter}`, (e) => handleNewLine(e, editorContentRef.current, true));
+  useHotkey('viewer', `ctrl+${keyCodes.enter}`, (e) => handleNewLine(e, editorContentRef.current));
 
   // Update only if user opens file from explorer
   useEffect(() => {
@@ -134,14 +101,6 @@ const TextEditor: React.FC<Props> = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     }
   }, [persistCurrentContent]);
-
-  useEffect(() => {
-    window.addEventListener('keydown', onKeydown);
-
-    return () => {
-      window.removeEventListener('keydown', onKeydown);
-    }
-  }, [onKeydown]);
 
   return (
     <div className={`TextEditor__wrapper ${currentUser?.loggedIn && !activeFileInfo?.isFileDownloadingFromRemoteStorage && "view"}`}>

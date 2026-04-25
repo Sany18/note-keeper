@@ -8,7 +8,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 
 import { log } from 'services/log/log.service';
-import { isCtrl } from 'services/keyboardEvents/keyboardEvents.service';
+import { useHotkey } from 'services/keyboardEvents/useHotkey';
+import { useHotkeyZone } from 'services/keyboardEvents/useHotkeyZone';
 import { isTouchDevice } from 'services/clientDevice/getPlatform';
 import { getDOMParrentElement } from 'services/DOM/getParentElementByClassName';
 import { getClosestParentFolder } from 'services/tree/treeHelpers';
@@ -115,9 +116,9 @@ export const Explorer: React.FC<Props> = () => {
   const [drawerState, setDrawerState] = useRecoilState(leftDrawerSelector);
 
   const { activeFileModel, setActiveFileModel, setActiveFileInfo } = useActiveFile();
-  const { isExplorerInProgress, fileTree, rootFolderId, updateFileInTree, getFileFromTreeById } = useExplorer();
+  const { isExplorerInProgress, fileTree, rootFolderId, updateFileInTree, getFileFromTreeById, toggleFolderInTree } = useExplorer();
 
-  const { renameGDFile, changeFileParent, fetchRootFilesList } = useGapi();
+  const { renameGDFile, changeFileParent, fetchRootFilesList, fetchChildrenList } = useGapi();
   const { requestAdditionalScopes, currentUser } = useGoogleAuth();
   const { inProgress: fileUploadingInProgress, openUploadDialog, uploadFiles } = useUploadFiles();
 
@@ -248,71 +249,121 @@ export const Explorer: React.FC<Props> = () => {
     }
   }, []);
 
-  // On press F2, open rename dialog
   const toggleDrawer = useCallback(() => {
     setDrawerState({ open: !drawerState.open });
   }, [drawerState, setDrawerState]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const ctrl = isCtrl(e);
+  const explorerZone = useHotkeyZone('explorer');
 
-      if (e.code === 'F2') {
-        e.preventDefault();
-        renameActiveFile();
-      }
+  useHotkey('explorer', 'F2', (e) => { e.preventDefault(); renameActiveFile(); });
+  useHotkey('explorer', 'ctrl+KeyB', (e) => { e.preventDefault(); toggleDrawer(); });
+  useHotkey('explorer', 'Escape', (e) => { if (selectedFilesCount > 0) { e.preventDefault(); clearSelection(); } });
+  useHotkey('explorer', 'shift+ArrowDown', (e) => {
+    const visibleFileIds = getVisibleFileIds();
+    if (!visibleFileIds.length) return;
 
-      if (ctrl && e.code === 'KeyB') {
-        e.preventDefault();
-        toggleDrawer();
-      }
+    const currentId = filesState.lastSelectedFileId
+      || filesState.selectedFileIds?.[filesState.selectedFileIds.length - 1]
+      || filesState.selectionAnchorFileId
+      || visibleFileIds[0];
+    const anchorId = filesState.selectionAnchorFileId || currentId;
 
-      if (e.code === 'Escape' && selectedFilesCount > 0) {
-        e.preventDefault();
-        clearSelection();
-      }
+    const currentIndex = visibleFileIds.indexOf(currentId);
+    const safeCurrentIndex = currentIndex >= 0 ? currentIndex : 0;
+    const nextIndex = Math.min(safeCurrentIndex + 1, visibleFileIds.length - 1);
+    const nextId = visibleFileIds[nextIndex];
 
-      if (e.shiftKey && (e.code === 'ArrowDown' || e.code === 'ArrowUp')) {
-        const visibleFileIds = getVisibleFileIds();
-        if (!visibleFileIds.length) return;
+    if (!nextId) return;
+    e.preventDefault();
 
-        const currentId = filesState.lastSelectedFileId
-          || filesState.selectedFileIds?.[filesState.selectedFileIds.length - 1]
-          || filesState.selectionAnchorFileId
-          || visibleFileIds[0];
-        const anchorId = filesState.selectionAnchorFileId || currentId;
+    const anchorIndex = visibleFileIds.indexOf(anchorId);
+    const safeAnchorIndex = anchorIndex >= 0 ? anchorIndex : safeCurrentIndex;
+    const [from, to] = safeAnchorIndex < nextIndex
+      ? [safeAnchorIndex, nextIndex]
+      : [nextIndex, safeAnchorIndex];
 
-        const currentIndex = visibleFileIds.indexOf(currentId);
-        const safeCurrentIndex = currentIndex >= 0 ? currentIndex : 0;
-        const nextIndex = e.code === 'ArrowDown'
-          ? Math.min(safeCurrentIndex + 1, visibleFileIds.length - 1)
-          : Math.max(safeCurrentIndex - 1, 0);
-        const nextId = visibleFileIds[nextIndex];
+    setFilesState({ selectedFileIds: visibleFileIds.slice(from, to + 1), lastSelectedFileId: nextId, selectionAnchorFileId: visibleFileIds[safeAnchorIndex] });
+  });
+  useHotkey('explorer', 'shift+ArrowUp', (e) => {
+    const visibleFileIds = getVisibleFileIds();
+    if (!visibleFileIds.length) return;
 
-        if (!nextId) return;
+    const currentId = filesState.lastSelectedFileId
+      || filesState.selectedFileIds?.[filesState.selectedFileIds.length - 1]
+      || filesState.selectionAnchorFileId
+      || visibleFileIds[0];
+    const anchorId = filesState.selectionAnchorFileId || currentId;
 
-        e.preventDefault();
+    const currentIndex = visibleFileIds.indexOf(currentId);
+    const safeCurrentIndex = currentIndex >= 0 ? currentIndex : 0;
+    const nextIndex = Math.max(safeCurrentIndex - 1, 0);
+    const nextId = visibleFileIds[nextIndex];
 
-        const anchorIndex = visibleFileIds.indexOf(anchorId);
-        const safeAnchorIndex = anchorIndex >= 0 ? anchorIndex : safeCurrentIndex;
-        const [from, to] = safeAnchorIndex < nextIndex
-          ? [safeAnchorIndex, nextIndex]
-          : [nextIndex, safeAnchorIndex];
+    if (!nextId) return;
+    e.preventDefault();
 
-        setFilesState({
-          selectedFileIds: visibleFileIds.slice(from, to + 1),
-          lastSelectedFileId: nextId,
-          selectionAnchorFileId: visibleFileIds[safeAnchorIndex],
-        });
-      }
+    const anchorIndex = visibleFileIds.indexOf(anchorId);
+    const safeAnchorIndex = anchorIndex >= 0 ? anchorIndex : safeCurrentIndex;
+    const [from, to] = safeAnchorIndex < nextIndex
+      ? [safeAnchorIndex, nextIndex]
+      : [nextIndex, safeAnchorIndex];
+
+    setFilesState({ selectedFileIds: visibleFileIds.slice(from, to + 1), lastSelectedFileId: nextId, selectionAnchorFileId: visibleFileIds[safeAnchorIndex] });
+  });
+
+  const selectSingleFile = useCallback((id: string) => {
+    setFilesState({ selectedFileIds: [id], lastSelectedFileId: id, selectionAnchorFileId: id });
+    document.querySelector(`.LeftDrawer .ListItem[data-fileid="${id}"] .ListItem__content`)
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [setFilesState]);
+
+  useHotkey('explorer', 'ArrowDown', (e) => {
+    e.preventDefault();
+    const ids = getVisibleFileIds();
+    if (!ids.length) return;
+    const cur = filesState.lastSelectedFileId || filesState.selectedFileIds?.[0];
+    const idx = cur ? ids.indexOf(cur) : -1;
+    selectSingleFile(ids[Math.min(idx + 1, ids.length - 1)]);
+  });
+
+  useHotkey('explorer', 'ArrowUp', (e) => {
+    e.preventDefault();
+    const ids = getVisibleFileIds();
+    if (!ids.length) return;
+    const cur = filesState.lastSelectedFileId || filesState.selectedFileIds?.[0];
+    const idx = cur ? ids.indexOf(cur) : ids.length;
+    selectSingleFile(ids[Math.max(idx - 1, 0)]);
+  });
+
+  useHotkey('explorer', 'ArrowRight', (e) => {
+    e.preventDefault();
+    const cur = filesState.lastSelectedFileId || filesState.selectedFileIds?.[0];
+    if (!cur) return;
+    const file = getFileFromTreeById(cur);
+    if (!file?.isFolder) return;
+    if (!file.folderOpen) {
+      toggleFolderInTree(file, true);
+      fetchChildrenList(file);
+    } else {
+      const ids = getVisibleFileIds();
+      const idx = ids.indexOf(cur);
+      if (idx >= 0 && idx < ids.length - 1) selectSingleFile(ids[idx + 1]);
     }
+  });
 
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+  useHotkey('explorer', 'ArrowLeft', (e) => {
+    e.preventDefault();
+    const cur = filesState.lastSelectedFileId || filesState.selectedFileIds?.[0];
+    if (!cur) return;
+    const file = getFileFromTreeById(cur);
+    if (!file) return;
+    if (file.isFolder && file.folderOpen) {
+      toggleFolderInTree(file, false);
+    } else {
+      const parent = getFileFromTreeById(file.parents?.[0]);
+      if (parent) selectSingleFile(parent.id);
     }
-  }, [drawerState, renameActiveFile, selectedFilesCount, clearSelection, filesState.lastSelectedFileId, filesState.selectionAnchorFileId, filesState.selectedFileIds, getVisibleFileIds]);
+  });
 
   // Move file on drag and drop
   useEffect(() => {
@@ -599,8 +650,9 @@ export const Explorer: React.FC<Props> = () => {
   return (
     <div
       ref={drawerRef}
-      className='LeftDrawer'
-      onContextMenu={contextMenuCallback}>
+      className={`LeftDrawer${explorerZone.isActive ? ' zone--active' : ''}`}
+      onContextMenu={contextMenuCallback}
+      onClick={explorerZone.activate}>
 
       <div
         ref={resizeBarRef}
