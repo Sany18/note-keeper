@@ -1,6 +1,7 @@
 import { useGapi } from "reactHooks/gapi/useGapi.hook";
 import { useExplorer } from "reactHooks/fileManager/explorer/explorer.hook";
 import { useGoogleAuth } from "reactHooks/gis/googleAuth.hook";
+import { isTokenExpired } from "reactHooks/gis/googleAuth.hook";
 import { useActiveFile } from "reactHooks/fileManager/activeFile/activeFile.hook";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 
@@ -71,6 +72,7 @@ export const FileViewer: React.FC<Props> = () => {
     updateGDFile,
     getGDRevisionsList,
     getGDFileRevisionContent,
+    gapiInitialized,
   } = useGapi();
 
   const historyPanelRef = useRef<HTMLDivElement>(null);
@@ -83,6 +85,19 @@ export const FileViewer: React.FC<Props> = () => {
   const [historyRollingBack, setHistoryRollingBack] = useState(false);
   const [fileRevisions, setFileRevisions] = useState<GDRevision[]>([]);
   const [selectedRevisionId, setSelectedRevisionId] = useState<string>(null);
+
+  // Re-open the active file after re-login if it has an error or its content is missing
+  useEffect(() => {
+    if (!currentUser.loggedIn || !gapiInitialized || !activeFileModel) return;
+    if (activeFileInfo?.isFileDownloadingFromRemoteStorage) return;
+    if (!activeFileInfo?.error && activeFileContent !== null) return;
+
+    const token = currentUser.googleAccessTokenToGD?.access_token;
+    if (!token || isTokenExpired(currentUser.googleAccessTokenToGD?.receivedAt)) return;
+
+    window.gapi.client.setToken({ access_token: token });
+    loadFileFromRS(activeFileModel);
+  }, [currentUser.loggedIn, currentUser.googleAccessTokenToGD?.access_token, gapiInitialized]);
 
   const canSave = currentUser?.loggedIn && activeFileInfo.isFileChangedLocaly && !activeFileInfo?.isFileSavedToRemoteStorage;
   const canUseRevisionHistory = activeFileInfo?.viewType === ViewerType.TEXT || activeFileInfo?.viewType === ViewerType.PASSWORD;

@@ -14,6 +14,7 @@ import { explorerSelector } from "state/localState/explorerState";
 import { fileUploadingSelector } from "state/sessionState/fileUploadingState";
 
 import { File } from "../../dtos/file.model";
+import { isTokenExpired } from "reactHooks/gis/googleAuth.hook";
 import { getList } from "./googleDriveCRUD/getList";
 import { getGDFile } from "./googleDriveCRUD/getFile";
 import { deleteFile } from "./googleDriveCRUD/deleteFile";
@@ -101,12 +102,11 @@ export const _useGapi = () => {
     }
   }, [gapiInitialized, gapiCallbacks]);
 
-  // Forward GIS access token to gapi client, then trigger Drive file load
+  // Forward GIS access token to gapi client on token change
   useEffect(() => {
     const token = currentUser.googleAccessTokenToGD?.access_token;
     if (gapiInitialized && token) {
       window.gapi.client.setToken({ access_token: token });
-      document.dispatchEvent(new Event('loadFilesFromGoogleDrive'));
     }
   }, [gapiInitialized, currentUser.googleAccessTokenToGD?.access_token]);
 
@@ -278,13 +278,17 @@ export const _useGapi = () => {
   }, [filesListState.fileTree, fileUploading, uploadFileToGD]);
 
     //////////////////////////////////////////
-  // Get root files list on app load
+  // Get root files list when token is valid
   //////////////////////////////////////////
   useEffect(() => {
-    if (sessionState.isAppLoaded && gapiInitialized && currentUser.loggedIn) {
+    const accessToken = currentUser.googleAccessTokenToGD?.access_token;
+    const receivedAt = currentUser.googleAccessTokenToGD?.receivedAt;
+    const tokenValid = accessToken && !isTokenExpired(receivedAt);
+
+    if (sessionState.isAppLoaded && gapiInitialized && currentUser.loggedIn && tokenValid) {
       fetchRootFilesList();
     }
-  }, [sessionState.isAppLoaded, gapiInitialized, currentUser.loggedIn]);
+  }, [sessionState.isAppLoaded, gapiInitialized, currentUser.loggedIn, currentUser.googleAccessTokenToGD?.access_token]);
 
   return {
     rootId,

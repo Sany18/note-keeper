@@ -22,7 +22,7 @@ const tokenMaxAge = 55 * 60 * 1000; // 55 min safety window for 1h OAuth token
 const silentRefreshCooldownMs = 5000;
 const popupBlockedBackoffMs = 60000;
 
-const isTokenExpired = (receivedAt?: string): boolean => {
+export const isTokenExpired = (receivedAt?: string): boolean => {
   if (!receivedAt) return true;
 
   const tokenIssuedAt = new Date(receivedAt).getTime();
@@ -123,11 +123,6 @@ const _useGoogleAuth = () => {
     const stale = !accessToken || isTokenExpired(receivedAt);
 
     if (!stale) return;
-
-    setItem(LocalStorageKeys.CURRENT_USER, {
-      ...currentUser,
-      loggedIn: false,
-    });
 
     refreshAccessTokenSilently();
   }, [

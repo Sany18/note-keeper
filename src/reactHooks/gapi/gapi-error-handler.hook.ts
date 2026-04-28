@@ -61,7 +61,7 @@ export const useGapiErrorHandler = () => {
     }
 
     return errorMessage;
-  }, [activeFileInfo, checkGDAccessToken, refreshAccessTokenSilently]);
+  }, [checkGDAccessToken, refreshAccessTokenSilently]);
 
   return {
     handleError,

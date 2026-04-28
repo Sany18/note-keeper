@@ -243,14 +243,6 @@ export const Explorer: React.FC<Props> = () => {
     return currentUser.scopes?.includes('docs');
   }, [currentUser.scopes]);
 
-  // Load files from Google Drive on event (on app loaded and user logged in)
-  useEffect(() => {
-    document.addEventListener('loadFilesFromGoogleDrive', fetchRootFilesList);
-
-    return () => {
-      document.removeEventListener('loadFilesFromGoogleDrive', fetchRootFilesList);
-    }
-  }, []);
 
   const toggleDrawer = useCallback(() => {
     setDrawerState({ open: !drawerState.open });

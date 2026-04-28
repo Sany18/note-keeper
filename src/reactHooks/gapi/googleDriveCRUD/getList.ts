@@ -12,7 +12,7 @@ export const getList = ({ handleError }) => (params: any): Promise<File[]> => {
       resolve(files);
     }).catch(async (error) => {
       handleError('getGDList', error);
-      // reject(error);
+      reject(error);
     });
   });
 };
