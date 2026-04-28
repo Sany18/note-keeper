@@ -63,7 +63,7 @@ export const FileViewer: React.FC<Props> = () => {
 
   const { fileTree } = useExplorer();
 
-  const { currentUser } = useGoogleAuth();
+  const { currentUser, isAuthInitializing } = useGoogleAuth();
   const { loadFileFromRS } = useFileViewerService();
   const {
     openPickerForFile,
@@ -382,6 +382,10 @@ export const FileViewer: React.FC<Props> = () => {
   }
 
   const currentViewer = () => {
+    if (isAuthInitializing) {
+      return <Loader />
+    }
+
     if (!currentUser?.loggedIn) {
       return <WelcomePage />
     }

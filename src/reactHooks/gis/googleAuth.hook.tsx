@@ -21,6 +21,7 @@ const getUserDefaultState = (): UserState => ({
 const tokenMaxAge = 55 * 60 * 1000; // 55 min safety window for 1h OAuth token
 const silentRefreshCooldownMs = 5000;
 const popupBlockedBackoffMs = 60000;
+const silentRefreshTimeoutMs = 5000;
 
 export const isTokenExpired = (receivedAt?: string): boolean => {
   if (!receivedAt) return true;
@@ -48,6 +49,10 @@ const _useGoogleAuth = () => {
   const currentUser = useMemo<Partial<UserState>>((): Partial<UserState> => {
     return getItem(LocalStorageKeys.CURRENT_USER) || getUserDefaultState();
   }, [items[LocalStorageKeys.CURRENT_USER]]);
+
+  // Derived: true while GIS loads, or while a logged-in user's token is stale (refresh in progress)
+  const tokenStale = !!currentUser.loggedIn && isTokenExpired(currentUser.googleAccessTokenToGD?.receivedAt);
+  const isAuthInitializing = !googleAuthReady || tokenStale;
 
   useEffect(() => {
     const initTokenCallback = (googleAccessTokenToGD) => {
@@ -131,8 +136,23 @@ const _useGoogleAuth = () => {
     currentUser.googleAccessTokenToGD?.access_token,
     currentUser.googleAccessTokenToGD?.receivedAt,
     refreshAccessTokenSilently,
-    setItem,
   ]);
+
+  // Fallback: if the silent refresh callback never fires (e.g. popup fully blocked),
+  // mark the user as logged out after a timeout so the spinner doesn't hang forever.
+  useEffect(() => {
+    if (!googleAuthReady || !tokenStale) return;
+
+    const timeout = setTimeout(() => {
+      const stored = getItem(LocalStorageKeys.CURRENT_USER) || getUserDefaultState();
+      if (stored.loggedIn && isTokenExpired(stored.googleAccessTokenToGD?.receivedAt)) {
+        stored.loggedIn = false;
+        setItem(LocalStorageKeys.CURRENT_USER, stored);
+      }
+    }, silentRefreshTimeoutMs);
+
+    return () => clearTimeout(timeout);
+  }, [googleAuthReady, tokenStale]);
 
   const requestAdditionalScopes = useCallback(() => {
     if (googleSignInRef.current) {
@@ -169,6 +189,7 @@ const _useGoogleAuth = () => {
     logout,
     requestAdditionalScopes,
     refreshAccessTokenSilently,
+    isAuthInitializing,
   }
 }
 
